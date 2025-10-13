@@ -159,6 +159,7 @@ function updateBoard() {
 
         cell.textContent = value || '';
         cell.classList.toggle('fixed', initialGrid[row][col] !== 0);
+        cell.classList.toggle('invalid', value !== 0 && initialGrid[row][col] === 0 && !isValidMove(row, col, value));
 
         if (hintsVisible && value === 0) {
             showHints(cell, row, col);
