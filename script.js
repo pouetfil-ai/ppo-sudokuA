@@ -48,6 +48,7 @@ function setupEventListeners() {
     document.getElementById('mask-hint').addEventListener('click', () => {
         maskMode = !maskMode; // Toggle le mode
         updateCandidateBtnStates();
+        if (selectedCell) selectedCell.focus();
     });
     document.getElementById('unmask-hint').addEventListener('click', unmaskLastHint);
 }
