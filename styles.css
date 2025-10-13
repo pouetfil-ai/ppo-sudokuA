@@ -91,11 +91,6 @@ button:hover, select:hover {
     font-weight: bold;
 }
 
-.cell.invalid {
-    color: #ff4444;
-    font-weight: bold;
-}
-
 .cell:nth-child(3n+3):not(:nth-last-child(3n)) {
     border-right: 2px solid #000;
 }

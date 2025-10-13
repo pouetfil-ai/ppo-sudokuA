@@ -1,6 +1,7 @@
 // Variables globales
 let sudokuGrid = Array(9).fill().map(() => Array(9).fill(0));
 let initialGrid = Array(9).fill().map(() => Array(9).fill(0));
+let solutionGrid = Array(9).fill().map(() => Array(9).fill(0)); // Grille de solution complète
 let hintsVisible = false;
 let selectedCell = null;
 let history = [];
@@ -63,6 +64,13 @@ function generatePuzzle(difficulty) {
 
     // Remplir la grille avec un puzzle valide
     fillGrid();
+
+    // Sauvegarder la solution complète
+    for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+            solutionGrid[i][j] = sudokuGrid[i][j];
+        }
+    }
 
     // Supprimer des nombres selon la difficulté
     const cellsToRemove = difficulty === 'easy' ? 40 : difficulty === 'medium' ? 50 : 60;
@@ -157,13 +165,19 @@ function updateBoard() {
         const col = parseInt(cell.dataset.col);
         const value = sudokuGrid[row][col];
 
+        // Déterminer la couleur du texte
+        let textColor = 'black'; // Couleur par défaut
+        if (value !== 0 && initialGrid[row][col] === 0) { // Cellule remplie par le joueur
+            if (value === solutionGrid[row][col]) {
+                textColor = 'black'; // Correct
+            } else {
+                textColor = 'red'; // Incorrect
+            }
+        }
+
+        cell.style.color = textColor;
         cell.textContent = value || '';
         cell.classList.toggle('fixed', initialGrid[row][col] !== 0);
-
-        // Vérifier si le chiffre est invalide (uniquement si c'est une cellule modifiée par le joueur)
-        const isFixed = initialGrid[row][col] !== 0;
-        const isInvalid = !isFixed && value !== 0 && !isValidMove(row, col, value);
-        cell.classList.toggle('invalid', isInvalid);
 
         if (hintsVisible && value === 0) {
             showHints(cell, row, col);
@@ -212,11 +226,13 @@ function handleKeyPress(event) {
 
     const key = event.key;
     if (key >= '1' && key <= '9') {
+        const oldValue = sudokuGrid[row][col];
         sudokuGrid[row][col] = parseInt(key);
         updateBoard();
         addToHistory(sudokuGrid);
         clearMessage();
     } else if (key === 'Backspace' || key === 'Delete') {
+        const oldValue = sudokuGrid[row][col];
         sudokuGrid[row][col] = 0;
         updateBoard();
         addToHistory(sudokuGrid);
