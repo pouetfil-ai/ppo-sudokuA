@@ -108,7 +108,8 @@ button:hover, select:hover {
 }
 
 .hints {
-    font-size: 8px;
+    font-size: 10px;
+    font-weight: bold;
     line-height: 1;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
