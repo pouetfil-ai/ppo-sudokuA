@@ -159,7 +159,7 @@ function updateBoard() {
 
         cell.textContent = value || '';
         cell.classList.toggle('fixed', initialGrid[row][col] !== 0);
-        cell.classList.toggle('invalid', value !== 0 && initialGrid[row][col] === 0 && !isValidMove(row, col, value));
+        cell.classList.toggle('invalid', value !== 0 && initialGrid[row][col] === 0 && isCellInvalid(row, col, value));
 
         if (hintsVisible && value === 0) {
             showHints(cell, row, col);
@@ -339,6 +339,52 @@ function redo() {
         updateBoard();
         clearMessage();
     }
+}
+
+// Vérifier si une cellule est invalide
+function isCellInvalid(row, col, num) {
+    // Créer une copie temporaire de la grille
+    const tempGrid = sudokuGrid.map(r => [...r]);
+    tempGrid[row][col] = num;
+
+    // Vérifier s'il y a un conflit dans la ligne
+    const lineConflicts = {};
+    for (let c = 0; c < 9; c++) {
+        if (tempGrid[row][c] !== 0) {
+            if (lineConflicts[tempGrid[row][c]]) {
+                return true; // Conflit trouvé
+            }
+            lineConflicts[tempGrid[row][c]] = true;
+        }
+    }
+
+    // Vérifier s'il y a un conflit dans la colonne
+    const colConflicts = {};
+    for (let r = 0; r < 9; r++) {
+        if (tempGrid[r][col] !== 0) {
+            if (colConflicts[tempGrid[r][col]]) {
+                return true; // Conflit trouvé
+            }
+            colConflicts[tempGrid[r][col]] = true;
+        }
+    }
+
+    // Vérifier s'il y a un conflit dans le bloc 3x3
+    const blockConflicts = {};
+    const startRow = Math.floor(row / 3) * 3;
+    const startCol = Math.floor(col / 3) * 3;
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            if (tempGrid[startRow + r][startCol + c] !== 0) {
+                if (blockConflicts[tempGrid[startRow + r][startCol + c]]) {
+                    return true; // Conflit trouvé
+                }
+                blockConflicts[tempGrid[startRow + r][startCol + c]] = true;
+            }
+        }
+    }
+
+    return false; // Aucun conflit
 }
 
 // Vérifier si la solution complète est valide
