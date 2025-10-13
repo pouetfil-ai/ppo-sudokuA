@@ -224,24 +224,28 @@ function handleKeyPress(event) {
 // Vérifier la solution
 function checkSolution() {
     let complete = true;
-    let valid = true;
 
+    // Vérifier si la grille est complète
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
             if (sudokuGrid[row][col] === 0) {
                 complete = false;
-            } else if (!isValidMove(row, col, sudokuGrid[row][col])) {
-                valid = false;
+                break;
             }
         }
+        if (!complete) break;
     }
 
     if (!complete) {
         showMessage('La grille n\'est pas complète', 'warning');
-    } else if (!valid) {
-        showMessage('Solution invalide', 'error');
-    } else {
+        return;
+    }
+
+    // Si complète, vérifier la validité
+    if (isValidSolution()) {
         showMessage('Félicitations ! Solution correcte !', 'success');
+    } else {
+        showMessage('Solution invalide', 'error');
     }
 }
 
@@ -334,6 +338,51 @@ function redo() {
         updateBoard();
         clearMessage();
     }
+}
+
+// Vérifier si la solution complète est valide
+function isValidSolution() {
+    // Vérifier les lignes
+    for (let row = 0; row < 9; row++) {
+        const seen = new Set();
+        for (let col = 0; col < 9; col++) {
+            const num = sudokuGrid[row][col];
+            if (seen.has(num) || num < 1 || num > 9) {
+                return false;
+            }
+            seen.add(num);
+        }
+    }
+
+    // Vérifier les colonnes
+    for (let col = 0; col < 9; col++) {
+        const seen = new Set();
+        for (let row = 0; row < 9; row++) {
+            const num = sudokuGrid[row][col];
+            if (seen.has(num) || num < 1 || num > 9) {
+                return false;
+            }
+            seen.add(num);
+        }
+    }
+
+    // Vérifier les blocs 3x3
+    for (let block = 0; block < 9; block++) {
+        const seen = new Set();
+        const startRow = Math.floor(block / 3) * 3;
+        const startCol = (block % 3) * 3;
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                const num = sudokuGrid[startRow + row][startCol + col];
+                if (seen.has(num) || num < 1 || num > 9) {
+                    return false;
+                }
+                seen.add(num);
+            }
+        }
+    }
+
+    return true;
 }
 
 // Effacer le message
