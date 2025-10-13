@@ -159,7 +159,13 @@ function updateBoard() {
 
         cell.textContent = value || '';
         cell.classList.toggle('fixed', initialGrid[row][col] !== 0);
-        cell.classList.toggle('invalid', value !== 0 && initialGrid[row][col] === 0 && isCellInvalid(row, col, value));
+
+        // Vérifier les conflits seulement pour les cellules non fixes
+        if (value !== 0 && initialGrid[row][col] === 0) {
+            cell.classList.toggle('invalid', isCellInvalid(row, col, value));
+        } else {
+            cell.classList.remove('invalid');
+        }
 
         if (hintsVisible && value === 0) {
             showHints(cell, row, col);
