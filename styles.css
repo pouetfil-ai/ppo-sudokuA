@@ -92,7 +92,7 @@ button:hover, select:hover {
 }
 
 .cell.invalid {
-    color: #f44336;
+    color: #ff4444;
     font-weight: bold;
 }
 

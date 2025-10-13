@@ -1,7 +1,6 @@
 // Variables globales
 let sudokuGrid = Array(9).fill().map(() => Array(9).fill(0));
 let initialGrid = Array(9).fill().map(() => Array(9).fill(0));
-let solutionGrid = Array(9).fill().map(() => Array(9).fill(0));
 let hintsVisible = false;
 let selectedCell = null;
 let history = [];
@@ -58,68 +57,23 @@ function newGame() {
 
 // Générer un puzzle Sudoku
 function generatePuzzle(difficulty) {
-    // Remplir la solution complète d'abord
-    solutionGrid = Array(9).fill().map(() => Array(9).fill(0));
-    fillSolutionGrid();
+    // Réinitialiser la grille
+    sudokuGrid = Array(9).fill().map(() => Array(9).fill(0));
+    initialGrid = Array(9).fill().map(() => Array(9).fill(0));
 
-    // Copier la solution complète dans sudokuGrid et initialGrid
-    for (let i = 0; i < 9; i++) {
-        for (let j = 0; j < 9; j++) {
-            sudokuGrid[i][j] = solutionGrid[i][j];
-            initialGrid[i][j] = solutionGrid[i][j];
-        }
-    }
+    // Remplir la grille avec un puzzle valide
+    fillGrid();
 
     // Supprimer des nombres selon la difficulté
     const cellsToRemove = difficulty === 'easy' ? 40 : difficulty === 'medium' ? 50 : 60;
     removeCells(cellsToRemove);
-}
 
-// Remplir la grille de solution complète
-function fillSolutionGrid() {
-    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-            if (solutionGrid[row][col] === 0) {
-                shuffleArray(nums);
-                for (let num of nums) {
-                    if (isValidMoveForSolution(row, col, num)) {
-                        solutionGrid[row][col] = num;
-                        if (fillSolutionGrid()) {
-                            return true;
-                        }
-                        solutionGrid[row][col] = 0;
-                    }
-                }
-                return false;
-            }
+    // Copier vers initialGrid
+    for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+            initialGrid[i][j] = sudokuGrid[i][j];
         }
     }
-    return true;
-}
-
-// Vérifier si un mouvement est valide pour la génération de solution
-function isValidMoveForSolution(row, col, num) {
-    // Vérifier la ligne
-    for (let i = 0; i < 9; i++) {
-        if (solutionGrid[row][i] === num) return false;
-    }
-
-    // Vérifier la colonne
-    for (let i = 0; i < 9; i++) {
-        if (solutionGrid[i][col] === num) return false;
-    }
-
-    // Vérifier le bloc 3x3
-    const startRow = Math.floor(row / 3) * 3;
-    const startCol = Math.floor(col / 3) * 3;
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            if (solutionGrid[startRow + i][startCol + j] === num) return false;
-        }
-    }
-
-    return true;
 }
 
 // Remplir la grille avec un Sudoku valide
@@ -206,12 +160,10 @@ function updateBoard() {
         cell.textContent = value || '';
         cell.classList.toggle('fixed', initialGrid[row][col] !== 0);
 
-        // Vérifier les conflits seulement pour les cellules non fixes
-        if (value !== 0 && initialGrid[row][col] === 0) {
-            cell.classList.toggle('invalid', isCellInvalid(row, col, value));
-        } else {
-            cell.classList.remove('invalid');
-        }
+        // Vérifier si le chiffre est invalide (uniquement si c'est une cellule modifiée par le joueur)
+        const isFixed = initialGrid[row][col] !== 0;
+        const isInvalid = !isFixed && value !== 0 && !isValidMove(row, col, value);
+        cell.classList.toggle('invalid', isInvalid);
 
         if (hintsVisible && value === 0) {
             showHints(cell, row, col);
@@ -260,13 +212,11 @@ function handleKeyPress(event) {
 
     const key = event.key;
     if (key >= '1' && key <= '9') {
-        const oldValue = sudokuGrid[row][col];
         sudokuGrid[row][col] = parseInt(key);
         updateBoard();
         addToHistory(sudokuGrid);
         clearMessage();
     } else if (key === 'Backspace' || key === 'Delete') {
-        const oldValue = sudokuGrid[row][col];
         sudokuGrid[row][col] = 0;
         updateBoard();
         addToHistory(sudokuGrid);
@@ -277,28 +227,24 @@ function handleKeyPress(event) {
 // Vérifier la solution
 function checkSolution() {
     let complete = true;
+    let valid = true;
 
-    // Vérifier si la grille est complète
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
             if (sudokuGrid[row][col] === 0) {
                 complete = false;
-                break;
+            } else if (!isValidMove(row, col, sudokuGrid[row][col])) {
+                valid = false;
             }
         }
-        if (!complete) break;
     }
 
     if (!complete) {
         showMessage('La grille n\'est pas complète', 'warning');
-        return;
-    }
-
-    // Si complète, vérifier la validité
-    if (isValidSolution()) {
-        showMessage('Félicitations ! Solution correcte !', 'success');
-    } else {
+    } else if (!valid) {
         showMessage('Solution invalide', 'error');
+    } else {
+        showMessage('Félicitations ! Solution correcte !', 'success');
     }
 }
 
@@ -391,57 +337,6 @@ function redo() {
         updateBoard();
         clearMessage();
     }
-}
-
-// Vérifier si une cellule contient le BON chiffre de la solution finale
-function isCellInvalid(row, col, num) {
-    // Retourner true si le chiffre n'est PAS le bon chiffre de la solution
-    return solutionGrid[row][col] !== num;
-}
-
-// Vérifier si la solution complète est valide
-function isValidSolution() {
-    // Vérifier les lignes
-    for (let row = 0; row < 9; row++) {
-        const seen = new Set();
-        for (let col = 0; col < 9; col++) {
-            const num = sudokuGrid[row][col];
-            if (seen.has(num) || num < 1 || num > 9) {
-                return false;
-            }
-            seen.add(num);
-        }
-    }
-
-    // Vérifier les colonnes
-    for (let col = 0; col < 9; col++) {
-        const seen = new Set();
-        for (let row = 0; row < 9; row++) {
-            const num = sudokuGrid[row][col];
-            if (seen.has(num) || num < 1 || num > 9) {
-                return false;
-            }
-            seen.add(num);
-        }
-    }
-
-    // Vérifier les blocs 3x3
-    for (let block = 0; block < 9; block++) {
-        const seen = new Set();
-        const startRow = Math.floor(block / 3) * 3;
-        const startCol = (block % 3) * 3;
-        for (let row = 0; row < 3; row++) {
-            for (let col = 0; col < 3; col++) {
-                const num = sudokuGrid[startRow + row][startCol + col];
-                if (seen.has(num) || num < 1 || num > 9) {
-                    return false;
-                }
-                seen.add(num);
-            }
-        }
-    }
-
-    return true;
 }
 
 // Effacer le message
