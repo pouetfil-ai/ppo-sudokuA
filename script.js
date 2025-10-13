@@ -341,45 +341,31 @@ function redo() {
     }
 }
 
-// Vérifier si une cellule est invalide
+// Vérifier si une cellule est invalide (conflit avec les règles actuelles)
 function isCellInvalid(row, col, num) {
-    // Créer une copie temporaire de la grille
-    const tempGrid = sudokuGrid.map(r => [...r]);
-    tempGrid[row][col] = num;
-
-    // Vérifier s'il y a un conflit dans la ligne
-    const lineConflicts = {};
+    // Vérifier s'il y a une duplication dans la ligne
     for (let c = 0; c < 9; c++) {
-        if (tempGrid[row][c] !== 0) {
-            if (lineConflicts[tempGrid[row][c]]) {
-                return true; // Conflit trouvé
-            }
-            lineConflicts[tempGrid[row][c]] = true;
+        if (c !== col && sudokuGrid[row][c] === num) {
+            return true; // Conflit trouvé dans la ligne
         }
     }
 
-    // Vérifier s'il y a un conflit dans la colonne
-    const colConflicts = {};
+    // Vérifier s'il y a une duplication dans la colonne
     for (let r = 0; r < 9; r++) {
-        if (tempGrid[r][col] !== 0) {
-            if (colConflicts[tempGrid[r][col]]) {
-                return true; // Conflit trouvé
-            }
-            colConflicts[tempGrid[r][col]] = true;
+        if (r !== row && sudokuGrid[r][col] === num) {
+            return true; // Conflit trouvé dans la colonne
         }
     }
 
-    // Vérifier s'il y a un conflit dans le bloc 3x3
-    const blockConflicts = {};
+    // Vérifier s'il y a une duplication dans le bloc 3x3
     const startRow = Math.floor(row / 3) * 3;
     const startCol = Math.floor(col / 3) * 3;
     for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
-            if (tempGrid[startRow + r][startCol + c] !== 0) {
-                if (blockConflicts[tempGrid[startRow + r][startCol + c]]) {
-                    return true; // Conflit trouvé
-                }
-                blockConflicts[tempGrid[startRow + r][startCol + c]] = true;
+            const checkRow = startRow + r;
+            const checkCol = startCol + c;
+            if ((checkRow !== row || checkCol !== col) && sudokuGrid[checkRow][checkCol] === num) {
+                return true; // Conflit trouvé dans le bloc
             }
         }
     }
