@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de Sudoku</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Sudoku</h1>
+        <div class="controls">
+            <button id="new-game">Nouvelle Partie</button>
+            <button id="check-solution">Vérifier Solution</button>
+            <button id="clear-grid">Effacer Grille</button>
+            <button id="toggle-hints">Basculer Candidats</button>
+            <select id="difficulty">
+                <option value="easy">Facile</option>
+                <option value="medium" selected>Moyen</option>
+                <option value="hard">Difficile</option>
+            </select>
+        </div>
+        <div class="sudoku-board" id="sudoku-board">
+            <!-- La grille sera générée en JavaScript -->
+        </div>
+        <div id="message" class="message"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
