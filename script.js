@@ -163,15 +163,18 @@ function updateBoard() {
 
 // Afficher les candidats possibles
 function showHints(cell, row, col) {
-    const hints = [];
+    const hints = Array(9).fill(null);
     for (let num = 1; num <= 9; num++) {
         if (isValidMove(row, col, num)) {
-            hints.push(num);
+            // Position dans la mini-grille 3x3 : transform(K, B=3) → (K+1-1)%B, floor((K+1-1)/B)
+            // Pour K=num-1: ligne = floor((num-1)/3), colonne = (num-1)%3
+            const hintIndex = num - 1;
+            hints[hintIndex] = num;
         }
     }
 
     cell.innerHTML = '<div class="hints">' +
-        hints.map(num => `<div>${num}</div>`).join('') +
+        hints.map(num => `<div>${num || ''}</div>`).join('') +
         '</div>';
 }
 
