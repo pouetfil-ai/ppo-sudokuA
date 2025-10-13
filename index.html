@@ -15,7 +15,11 @@
             <button id="redo">Rétablir</button>
             <button id="check-solution">Vérifier Solution</button>
             <button id="clear-grid">Effacer Grille</button>
-            <button id="toggle-hints">Basculer Candidats</button>
+            <div class="candidates-section">
+                <div id="hints-indicator" class="hints-indicator"></div>
+                <button id="mask-hint" class="candidate-btn">-</button>
+                <button id="unmask-hint" class="candidate-btn">+</button>
+            </div>
             <select id="difficulty">
                 <option value="easy">Facile</option>
                 <option value="medium" selected>Moyen</option>

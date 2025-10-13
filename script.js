@@ -6,6 +6,10 @@ let hintsVisible = false;
 let selectedCell = null;
 let history = [];
 let historyIndex = -1;
+let maskedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat masqué
+let maskMode = false; // Mode pour masquer un candidat
+let unmaskStack = []; // Pile des masquages pour undo-like restore (dernier masqué)
+let undoStack = []; // Pile des actions de restauration (pour l'historique étendu)
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
@@ -40,7 +44,12 @@ function setupEventListeners() {
     document.getElementById('redo').addEventListener('click', redo);
     document.getElementById('check-solution').addEventListener('click', checkSolution);
     document.getElementById('clear-grid').addEventListener('click', clearGrid);
-    document.getElementById('toggle-hints').addEventListener('click', toggleHints);
+    document.getElementById('hints-indicator').addEventListener('click', toggleHints);
+    document.getElementById('mask-hint').addEventListener('click', () => {
+        maskMode = !maskMode; // Toggle le mode
+        updateCandidateBtnStates();
+    });
+    document.getElementById('unmask-hint').addEventListener('click', unmaskLastHint);
 }
 
 // Nouvelle partie
@@ -48,12 +57,18 @@ function newGame() {
     const difficulty = document.getElementById('difficulty').value;
     generatePuzzle(difficulty);
     updateBoard();
+    updateHintsIndicator();
     clearMessage();
     hintsVisible = false;
-    document.getElementById('toggle-hints').textContent = 'Afficher Candidats';
     // Réinitialiser l'historique
     history = [JSON.parse(JSON.stringify(sudokuGrid))];
     historyIndex = 0;
+    // Réinitialiser les masquages de candidats
+    maskedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false)));
+    unmaskStack = [];
+    maskMode = false;
+    // Réinitialiser les indicateurs actifs
+    updateCandidateBtnStates();
 }
 
 // Générer un puzzle Sudoku
@@ -191,7 +206,7 @@ function updateBoard() {
 function showHints(cell, row, col) {
     const hints = Array(9).fill(null);
     for (let num = 1; num <= 9; num++) {
-        if (isValidMove(row, col, num)) {
+        if (isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
             // Position dans la mini-grille 3x3 : transform(K, B=3) → (K+1-1)%B, floor((K+1-1)/B)
             // Pour K=num-1: ligne = floor((num-1)/3), colonne = (num-1)%3
             const hintIndex = num - 1;
@@ -225,7 +240,18 @@ function handleKeyPress(event) {
     if (initialGrid[row][col] !== 0) return; // Cellule fixe
 
     const key = event.key;
-    if (key >= '1' && key <= '9') {
+    if (maskMode && key >= '1' && key <= '9') {
+        // Masquer un candidat
+        const num = parseInt(key);
+        if (isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
+            maskedCandidates[row][col][num] = true;
+            unmaskStack.push({ row, col, num });
+            maskMode = false; // Désactiver le mode après un masquage
+            updateBoard();
+            updateCandidateBtnStates();
+            clearMessage();
+        }
+    } else if (key >= '1' && key <= '9') {
         const oldValue = sudokuGrid[row][col];
         sudokuGrid[row][col] = parseInt(key);
         updateBoard();
@@ -280,9 +306,29 @@ function clearGrid() {
 // Basculer l'affichage des candidats
 function toggleHints() {
     hintsVisible = !hintsVisible;
-    document.getElementById('toggle-hints').textContent =
-        hintsVisible ? 'Masquer Candidats' : 'Afficher Candidats';
+    updateHintsIndicator();
     updateBoard();
+}
+
+// Mettre à jour l'indicateur des candidats
+function updateHintsIndicator() {
+    const indicator = document.getElementById('hints-indicator');
+    if (hintsVisible) {
+        indicator.classList.add('active');
+    } else {
+        indicator.classList.remove('active');
+    }
+}
+
+// Mettre à jour l'état visuel des boutons candidats
+function updateCandidateBtnStates() {
+    const maskBtn = document.getElementById('mask-hint');
+    if (maskMode) {
+        maskBtn.classList.add('active');
+    } else {
+        maskBtn.classList.remove('active');
+    }
+    // Le bouton + reste normal pour la restauration
 }
 
 // Mettre en évidence les cellules liées
@@ -359,4 +405,13 @@ function redo() {
 function clearMessage() {
     document.getElementById('message').textContent = '';
     document.getElementById('message').className = 'message';
+}
+
+// Masquer le dernier candidat masqué (comme undo pour les masquages)
+function unmaskLastHint() {
+    if (unmaskStack.length > 0) {
+        const lastMasked = unmaskStack.pop();
+        maskedCandidates[lastMasked.row][lastMasked.col][lastMasked.num] = false;
+        updateBoard();
+    }
 }

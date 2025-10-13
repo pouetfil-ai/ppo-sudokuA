@@ -30,6 +30,58 @@ h1 {
     margin-bottom: 20px;
 }
 
+.candidates-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    padding: 4px 12px;
+    background-color: #f9f9f9;
+}
+
+.hints-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #ddd;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.hints-indicator.active {
+    background-color: #4CAF50;
+}
+
+.candidate-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background-color: #2196F3;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+}
+
+.candidate-btn:hover {
+    background-color: #1976D2;
+}
+
+.candidate-btn.active {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.candidate-btn.active:hover {
+    background-color: #45a049;
+}
+
 button, select {
     padding: 8px 16px;
     font-size: 14px;
