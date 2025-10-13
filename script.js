@@ -3,6 +3,8 @@ let sudokuGrid = Array(9).fill().map(() => Array(9).fill(0));
 let initialGrid = Array(9).fill().map(() => Array(9).fill(0));
 let hintsVisible = false;
 let selectedCell = null;
+let history = [];
+let historyIndex = -1;
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
@@ -32,6 +34,8 @@ function createBoard() {
 
 // Configurer les écouteurs d'événements
 function setupEventListeners() {
+    document.getElementById('undo').addEventListener('click', undo);
+    document.getElementById('redo').addEventListener('click', redo);
     document.getElementById('new-game').addEventListener('click', newGame);
     document.getElementById('check-solution').addEventListener('click', checkSolution);
     document.getElementById('clear-grid').addEventListener('click', clearGrid);
@@ -42,10 +46,14 @@ function setupEventListeners() {
 function newGame() {
     const difficulty = document.getElementById('difficulty').value;
     generatePuzzle(difficulty);
+    // Initialiser l'historique avec l'état initial
+    history = [sudokuGrid.map(row => [...row])];
+    historyIndex = 0;
     updateBoard();
     clearMessage();
     hintsVisible = false;
     document.getElementById('toggle-hints').textContent = 'Afficher Candidats';
+    updateUndoRedoButtons();
 }
 
 // Générer un puzzle Sudoku
@@ -189,6 +197,46 @@ function selectCell(cell) {
     highlightRelated();
 }
 
+// Sauvegarder l'état actuel
+function saveState() {
+    const currentState = sudokuGrid.map(row => [...row]);
+    history = history.slice(0, historyIndex + 1);
+    history.push(currentState);
+    historyIndex++;
+    updateUndoRedoButtons();
+}
+
+// Annuler la dernière action
+function undo() {
+    if (historyIndex > 0) {
+        historyIndex--;
+        sudokuGrid = history[historyIndex].map(row => [...row]);
+        updateBoard();
+        clearMessage();
+        updateUndoRedoButtons();
+    }
+}
+
+// Rétablir la dernière action annulée
+function redo() {
+    if (historyIndex < history.length - 1) {
+        historyIndex++;
+        sudokuGrid = history[historyIndex].map(row => [...row]);
+        updateBoard();
+        clearMessage();
+        updateUndoRedoButtons();
+    }
+}
+
+// Mettre à jour l'état des boutons undo/redo
+function updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('undo');
+    const redoBtn = document.getElementById('redo');
+
+    undoBtn.disabled = historyIndex <= 0;
+    redoBtn.disabled = historyIndex >= history.length - 1;
+}
+
 // Gestion des touches
 function handleKeyPress(event) {
     if (!selectedCell) return;
@@ -198,15 +246,21 @@ function handleKeyPress(event) {
 
     if (initialGrid[row][col] !== 0) return; // Cellule fixe
 
+    const previousValue = sudokuGrid[row][col];
+
     const key = event.key;
     if (key >= '1' && key <= '9') {
+        saveState();
         sudokuGrid[row][col] = parseInt(key);
         updateBoard();
         clearMessage();
     } else if (key === 'Backspace' || key === 'Delete') {
-        sudokuGrid[row][col] = 0;
-        updateBoard();
-        clearMessage();
+        if (previousValue !== 0) {
+            saveState();
+            sudokuGrid[row][col] = 0;
+            updateBoard();
+            clearMessage();
+        }
     }
 }
 
