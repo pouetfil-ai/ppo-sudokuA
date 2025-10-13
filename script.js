@@ -1,6 +1,7 @@
 // Variables globales
 let sudokuGrid = Array(9).fill().map(() => Array(9).fill(0));
 let initialGrid = Array(9).fill().map(() => Array(9).fill(0));
+let solutionGrid = Array(9).fill().map(() => Array(9).fill(0));
 let hintsVisible = false;
 let selectedCell = null;
 let history = [];
@@ -57,23 +58,68 @@ function newGame() {
 
 // Générer un puzzle Sudoku
 function generatePuzzle(difficulty) {
-    // Réinitialiser la grille
-    sudokuGrid = Array(9).fill().map(() => Array(9).fill(0));
-    initialGrid = Array(9).fill().map(() => Array(9).fill(0));
+    // Remplir la solution complète d'abord
+    solutionGrid = Array(9).fill().map(() => Array(9).fill(0));
+    fillSolutionGrid();
 
-    // Remplir la grille avec un puzzle valide
-    fillGrid();
+    // Copier la solution complète dans sudokuGrid et initialGrid
+    for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+            sudokuGrid[i][j] = solutionGrid[i][j];
+            initialGrid[i][j] = solutionGrid[i][j];
+        }
+    }
 
     // Supprimer des nombres selon la difficulté
     const cellsToRemove = difficulty === 'easy' ? 40 : difficulty === 'medium' ? 50 : 60;
     removeCells(cellsToRemove);
+}
 
-    // Copier vers initialGrid
-    for (let i = 0; i < 9; i++) {
-        for (let j = 0; j < 9; j++) {
-            initialGrid[i][j] = sudokuGrid[i][j];
+// Remplir la grille de solution complète
+function fillSolutionGrid() {
+    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            if (solutionGrid[row][col] === 0) {
+                shuffleArray(nums);
+                for (let num of nums) {
+                    if (isValidMoveForSolution(row, col, num)) {
+                        solutionGrid[row][col] = num;
+                        if (fillSolutionGrid()) {
+                            return true;
+                        }
+                        solutionGrid[row][col] = 0;
+                    }
+                }
+                return false;
+            }
         }
     }
+    return true;
+}
+
+// Vérifier si un mouvement est valide pour la génération de solution
+function isValidMoveForSolution(row, col, num) {
+    // Vérifier la ligne
+    for (let i = 0; i < 9; i++) {
+        if (solutionGrid[row][i] === num) return false;
+    }
+
+    // Vérifier la colonne
+    for (let i = 0; i < 9; i++) {
+        if (solutionGrid[i][col] === num) return false;
+    }
+
+    // Vérifier le bloc 3x3
+    const startRow = Math.floor(row / 3) * 3;
+    const startCol = Math.floor(col / 3) * 3;
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            if (solutionGrid[startRow + i][startCol + j] === num) return false;
+        }
+    }
+
+    return true;
 }
 
 // Remplir la grille avec un Sudoku valide
@@ -347,36 +393,10 @@ function redo() {
     }
 }
 
-// Vérifier si une cellule est invalide (conflit avec les règles actuelles)
+// Vérifier si une cellule contient le BON chiffre de la solution finale
 function isCellInvalid(row, col, num) {
-    // Vérifier s'il y a une duplication dans la ligne
-    for (let c = 0; c < 9; c++) {
-        if (c !== col && sudokuGrid[row][c] === num) {
-            return true; // Conflit trouvé dans la ligne
-        }
-    }
-
-    // Vérifier s'il y a une duplication dans la colonne
-    for (let r = 0; r < 9; r++) {
-        if (r !== row && sudokuGrid[r][col] === num) {
-            return true; // Conflit trouvé dans la colonne
-        }
-    }
-
-    // Vérifier s'il y a une duplication dans le bloc 3x3
-    const startRow = Math.floor(row / 3) * 3;
-    const startCol = Math.floor(col / 3) * 3;
-    for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-            const checkRow = startRow + r;
-            const checkCol = startCol + c;
-            if ((checkRow !== row || checkCol !== col) && sudokuGrid[checkRow][checkCol] === num) {
-                return true; // Conflit trouvé dans le bloc
-            }
-        }
-    }
-
-    return false; // Aucun conflit
+    // Retourner true si le chiffre n'est PAS le bon chiffre de la solution
+    return solutionGrid[row][col] !== num;
 }
 
 // Vérifier si la solution complète est valide
