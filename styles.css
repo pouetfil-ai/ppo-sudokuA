@@ -295,12 +295,13 @@ button:hover, select:hover {
 .number-pad {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    height: 458px; /* Même hauteur que la grille Sudoku */
 }
 
 .number-pad-button {
     width: 50px;
-    height: 50px;
+    height: calc((458px - 8 * 8px) / 9); /* Répartition égale sur 9 boutons */
     border: none;
     border-radius: 8px;
     background-color: white;
@@ -354,12 +355,13 @@ button:hover, select:hover {
     .number-pad {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
+        gap: 6px;
         width: 300px;
+        height: auto; /* Retour à hauteur automatique pour mobile */
     }
 
     .number-pad-button {
-        width: 40px;
+        width: 100%;
         height: 40px;
         font-size: 14px;
     }
