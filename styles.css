@@ -195,7 +195,8 @@ button:hover, select:hover {
 }
 
 .hint-selected {
-    color: #2196F3;
+    background-color: #90CAF9;
+    color: black;
     font-weight: bold;
 }
 
