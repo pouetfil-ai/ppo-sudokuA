@@ -186,12 +186,16 @@ button:hover, select:hover {
     justify-items: center;
 }
 
-.hints > div {
+ .hints > div {
     display: flex;
     justify-content: center;
     align-items: center;
     width: 100%;
     height: 100%;
+}
+
+.cell.selected .hints > div {
+    color: white;
 }
 
 .hint-selected {
