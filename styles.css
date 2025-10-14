@@ -58,7 +58,7 @@ h1 {
     height: 30px;
     border: none;
     border-radius: 50%;
-    background-color: #2196F3;
+    background-color: #66BB6A;
     color: white;
     font-size: 18px;
     font-weight: bold;
@@ -70,16 +70,16 @@ h1 {
 }
 
 .candidate-btn:hover {
-    background-color: #1976D2;
+    background-color: #4DB6AC;
 }
 
 .candidate-btn.active {
-    background-color: #66BB6A;
+    background-color: #2196F3;
     color: white;
 }
 
 .candidate-btn.active:hover {
-    background-color: #45a049;
+    background-color: #1976D2;
 }
 
 button, select {
