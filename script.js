@@ -4,6 +4,7 @@ let initialGrid = Array(9).fill().map(() => Array(9).fill(0));
 let solutionGrid = Array(9).fill().map(() => Array(9).fill(0)); // Grille de solution complète
 let hintsVisible = false;
 let selectedCell = null;
+let selectedValue = 0;
 let history = [];
 let historyIndex = -1;
 let maskedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat masqué
@@ -232,7 +233,7 @@ function showHints(cell, row, col) {
     }
 
     cell.innerHTML = '<div class="hints">' +
-        hints.map(num => `<div>${num || ''}</div>`).join('') +
+        hints.map(num => `<div class="${num === selectedValue && selectedValue !== 0 ? 'hint-selected' : ''}">${num || ''}</div>`).join('') +
         '</div>';
 }
 
@@ -242,6 +243,9 @@ function selectCell(cell) {
         selectedCell.classList.remove('selected');
     }
     selectedCell = cell;
+    const row = parseInt(cell.dataset.row);
+    const col = parseInt(cell.dataset.col);
+    selectedValue = sudokuGrid[row][col];
     cell.classList.add('selected');
     cell.focus();
     highlightRelated();
@@ -369,11 +373,23 @@ function highlightRelated() {
             document.querySelector(`.cell[data-row="${startRow + r}"][data-col="${startCol + c}"]`).classList.add('related');
         }
     }
+
+    // Mettre en évidence les autres cellules avec la même valeur
+    if (selectedValue !== 0) {
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (sudokuGrid[r][c] === selectedValue && (r !== row || c !== col)) {
+                    document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`).classList.add('same-value');
+                }
+            }
+        }
+    }
 }
 
 // Effacer les mises en évidence
 function clearHighlights() {
     document.querySelectorAll('.cell.related').forEach(cell => cell.classList.remove('related'));
+    document.querySelectorAll('.cell.same-value').forEach(cell => cell.classList.remove('same-value'));
 }
 
 // Afficher un message
