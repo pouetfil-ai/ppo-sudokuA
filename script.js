@@ -524,13 +524,25 @@ function onNumberPadClick(num) {
 
     if (initialGrid[row][col] !== 0) return; // Cellule fixe
 
-    if (!isValidMove(row, col, num)) return; // Mouvement invalide
-
-    sudokuGrid[row][col] = num;
-    updateBoard();
-    addToHistory(sudokuGrid);
-    clearMessage();
-    updateNumberPadState(); // Mettre à jour après insertion
+    if (maskMode && isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
+        // Masquer un candidat en mode crayon
+        maskedCandidates[row][col][num] = true;
+        updateBoard();
+        updateCandidateBtnStates();
+        addToHistory(sudokuGrid, maskedCandidates);
+        clearMessage();
+    } else if (!maskMode && !isValidMove(row, col, num)) {
+        return; // Mouvement invalide, ne rien faire
+    } else if (!maskMode) {
+        // Placer le chiffre si mode normal et mouvement valide
+        sudokuGrid[row][col] = num;
+        selectedValue = num; // Mettre à jour la valeur sélectionnée
+        updateBoard();
+        updateHintsHighlighting(); // Mettre à jour la mise en évidence des candidats
+        addToHistory(sudokuGrid);
+        clearMessage();
+        updateNumberPadState(); // Mettre à jour après insertion
+    }
 }
 
 // Effacer le message
