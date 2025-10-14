@@ -34,6 +34,20 @@ function createBoard() {
     }
 }
 
+// Créer le numéro-pad
+function createNumberPad() {
+    const pad = document.getElementById('number-pad');
+    pad.innerHTML = '';
+
+    for (let num = 1; num <= 9; num++) {
+        const button = document.createElement('button');
+        button.className = 'number-pad-button';
+        button.textContent = num;
+        button.addEventListener('click', () => onNumberPadClick(num));
+        pad.appendChild(button);
+    }
+}
+
 // Configurer les écouteurs d'événements
 function setupEventListeners() {
     document.getElementById('start-game').addEventListener('click', startGame);
@@ -64,6 +78,7 @@ function startGame() {
 
     // Créer la grille et démarrer la partie
     createBoard();
+    createNumberPad();
     newGame();
 }
 
@@ -250,6 +265,7 @@ function selectCell(cell) {
     cell.focus();
     highlightRelated();
     updateHintsHighlighting();
+    updateNumberPadState();
 }
 
 // Gestion des touches
@@ -464,6 +480,54 @@ function redo() {
 function showMenu() {
     document.getElementById('menu').classList.remove('hidden');
     document.getElementById('game-container').classList.add('hidden');
+}
+
+// Mettre à jour l'état des boutons du numéro-pad
+function updateNumberPadState() {
+    const buttons = document.querySelectorAll('.number-pad-button');
+
+    if (!selectedCell) {
+        // Aucune cellule sélectionnée, tous les boutons actifs
+        buttons.forEach(btn => btn.classList.remove('invalid'));
+        return;
+    }
+
+    const row = parseInt(selectedCell.dataset.row);
+    const col = parseInt(selectedCell.dataset.col);
+
+    // Si cellule fixe, tous les boutons invalides
+    if (initialGrid[row][col] !== 0) {
+        buttons.forEach(btn => btn.classList.add('invalid'));
+        return;
+    }
+
+    // Pour chaque bouton, vérifier si le chiffre est valide
+    buttons.forEach(button => {
+        const num = parseInt(button.textContent);
+        if (isValidMove(row, col, num)) {
+            button.classList.remove('invalid');
+        } else {
+            button.classList.add('invalid');
+        }
+    });
+}
+
+// Gestionnaire d'événement pour les boutons du numéro-pad
+function onNumberPadClick(num) {
+    if (!selectedCell) return;
+
+    const row = parseInt(selectedCell.dataset.row);
+    const col = parseInt(selectedCell.dataset.col);
+
+    if (initialGrid[row][col] !== 0) return; // Cellule fixe
+
+    if (!isValidMove(row, col, num)) return; // Mouvement invalide
+
+    sudokuGrid[row][col] = num;
+    updateBoard();
+    addToHistory(sudokuGrid);
+    clearMessage();
+    updateNumberPadState(); // Mettre à jour après insertion
 }
 
 // Effacer le message
