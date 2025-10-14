@@ -247,7 +247,6 @@ function handleKeyPress(event) {
         const num = parseInt(key);
         if (isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
             maskedCandidates[row][col][num] = true;
-            maskMode = false; // Désactiver le mode après un masquage
             updateBoard();
             updateCandidateBtnStates();
             addToHistory(sudokuGrid, maskedCandidates);
