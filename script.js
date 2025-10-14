@@ -39,7 +39,6 @@ function setupEventListeners() {
     // document.getElementById('new-game').addEventListener('click', newGame); // Supprimé
     document.getElementById('undo').addEventListener('click', undo);
     document.getElementById('redo').addEventListener('click', redo);
-    document.getElementById('check-solution').addEventListener('click', checkSolution);
     document.getElementById('clear-grid').addEventListener('click', clearGrid);
     document.getElementById('hints-indicator').addEventListener('click', toggleHints);
     document.getElementById('mask-hint').addEventListener('click', () => {
@@ -297,11 +296,7 @@ function checkSolution() {
         }
     }
 
-    if (!complete) {
-        showMessage('La grille n\'est pas complète', 'warning');
-    } else if (!valid) {
-        showMessage('Solution invalide', 'error');
-    } else {
+    if (complete && valid) {
         showMessage('Félicitations ! Solution correcte !', 'success');
     }
 }
