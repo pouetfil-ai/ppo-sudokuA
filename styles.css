@@ -312,13 +312,13 @@ button:hover, select:hover {
 }
 
 .hints {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: bold;
     line-height: 1;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    gap: 1px;
+    gap: 0px;
     width: 100%;
     height: 100%;
     align-items: center;
@@ -428,12 +428,12 @@ button:hover, select:hover {
     }
 
     .hints {
-        font-size: 6px;
+        font-size: 8px;
     }
 
     .hints > div {
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
     }
 }
 
@@ -476,11 +476,11 @@ button:hover, select:hover {
     }
 
     .hints {
-        font-size: 6px;
+        font-size: 8px;
     }
 
     .hints > div {
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
     }
 }
