@@ -215,17 +215,20 @@ function updateBoard() {
 
         // Déterminer la couleur du texte
         let textColor = 'black'; // Couleur par défaut
+        let isIncorrect = false;
         if (value !== 0 && initialGrid[row][col] === 0) { // Cellule remplie par le joueur
             if (value === solutionGrid[row][col]) {
                 textColor = 'black'; // Correct
             } else {
                 textColor = 'red'; // Incorrect
+                isIncorrect = true;
             }
         }
 
         cell.style.color = textColor;
         cell.textContent = value || '';
         cell.classList.toggle('fixed', initialGrid[row][col] !== 0);
+        cell.classList.toggle('incorrect', isIncorrect);
 
         if (hintsVisible && value === 0) {
             showHints(cell, row, col);

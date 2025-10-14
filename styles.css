@@ -160,6 +160,10 @@ button:hover, select:hover {
     background-color: #90CAF9 !important;
 }
 
+.cell.incorrect.selected {
+    color: rgba(255, 116, 85, 0.968) !important;
+}
+
 .cell.fixed.selected {
     background-color: #1976D2 !important;
     color: white !important;
@@ -167,7 +171,7 @@ button:hover, select:hover {
 
 .cell.selected {
     background-color: #1976D2;
-    color: white;
+    color: white !important;
 }
 
 .cell:nth-child(3n):not(:nth-child(9n)),
