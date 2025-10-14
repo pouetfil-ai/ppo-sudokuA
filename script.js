@@ -37,6 +37,7 @@ function createBoard() {
 function setupEventListeners() {
     document.getElementById('start-game').addEventListener('click', startGame);
     // document.getElementById('new-game').addEventListener('click', newGame); // Supprimé
+    document.getElementById('menu-btn').addEventListener('click', showMenu);
     document.getElementById('undo').addEventListener('click', undo);
     document.getElementById('redo').addEventListener('click', redo);
     document.getElementById('clear-grid').addEventListener('click', clearGrid);
@@ -417,6 +418,12 @@ function redo() {
         updateBoard();
         clearMessage();
     }
+}
+
+// Retour au menu
+function showMenu() {
+    document.getElementById('menu').classList.remove('hidden');
+    document.getElementById('game-container').classList.add('hidden');
 }
 
 // Effacer le message
