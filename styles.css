@@ -97,6 +97,15 @@ button:hover, select:hover {
     background-color: #4DB6AC;
 }
 
+.game-layout {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 8px; /* Espacement équilibré */
+    max-width: 525px; /* Légère augmentation de largeur */
+    margin: 0 auto;
+}
+
 .sudoku-board {
     display: grid;
     grid-template-columns: repeat(9, 50px);
@@ -104,7 +113,7 @@ button:hover, select:hover {
     background-color: #000;
     border: 2px solid #000;
     max-width: 458px;
-    margin: 0 auto;
+    margin: 0; /* Supprimer tous les marges */
 }
 
 .cell {
@@ -202,94 +211,6 @@ button:hover, select:hover {
     background-color: #90CAF9;
     color: black;
     font-weight: bold;
-}
-
-.message {
-    text-align: center;
-    margin-top: 20px;
-    font-weight: bold;
-    min-height: 24px;
-}
-
-.message.success {
-    color: #4CAF50;
-}
-
-.message.warning {
-    color: #FF9800;
-}
-
-.message.error {
-    color: #F44336;
-}
-
-.conflict {
-    background-color: #ffebee;
-    color: #c62828;
-}
-
-.menu {
-    text-align: center;
-    padding: 40px 20px;
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.menu h2 {
-    color: #333;
-    margin-bottom: 30px;
-    font-size: 24px;
-}
-
-.difficulty-selection {
-    margin-bottom: 30px;
-}
-
-.difficulty-selection label {
-    display: block;
-    margin-bottom: 10px;
-    font-size: 18px;
-    color: #555;
-}
-
-.difficulty-selection select {
-    padding: 10px 20px;
-    font-size: 16px;
-    border: 2px solid #ddd;
-    border-radius: 5px;
-    background-color: white;
-    color: black !important;
-    cursor: pointer;
-}
-
-.start-btn {
-    padding: 15px 30px;
-    font-size: 18px;
-    font-weight: bold;
-    background-color: #66BB6A;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.start-btn:hover {
-    background-color: #4DB6AC;
-}
-
-.game-container {
-    width: 100%;
-}
-
-.game-layout {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 20px;
-    max-width: 600px;
-    margin: 0 auto;
 }
 
 .number-pad {
