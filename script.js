@@ -8,8 +8,6 @@ let history = [];
 let historyIndex = -1;
 let maskedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat masqué
 let maskMode = false; // Mode pour masquer un candidat
-let unmaskStack = []; // Pile des masquages pour undo-like restore (dernier masqué)
-let undoStack = []; // Pile des actions de restauration (pour l'historique étendu)
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
@@ -50,7 +48,7 @@ function setupEventListeners() {
         updateCandidateBtnStates();
         if (selectedCell) selectedCell.focus();
     });
-    document.getElementById('unmask-hint').addEventListener('click', unmaskLastHint);
+
 }
 
 // Nouvelle partie
@@ -62,11 +60,14 @@ function newGame() {
     clearMessage();
     hintsVisible = false;
     // Réinitialiser l'historique
-    history = [JSON.parse(JSON.stringify(sudokuGrid))];
+    const initialState = {
+        grid: JSON.parse(JSON.stringify(sudokuGrid)),
+        maskedCandidates: JSON.parse(JSON.stringify(maskedCandidates))
+    };
+    history = [initialState];
     historyIndex = 0;
     // Réinitialiser les masquages de candidats
     maskedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false)));
-    unmaskStack = [];
     maskMode = false;
     // Réinitialiser les indicateurs actifs
     updateCandidateBtnStates();
@@ -246,10 +247,10 @@ function handleKeyPress(event) {
         const num = parseInt(key);
         if (isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
             maskedCandidates[row][col][num] = true;
-            unmaskStack.push({ row, col, num });
             maskMode = false; // Désactiver le mode après un masquage
             updateBoard();
             updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates);
             clearMessage();
         }
     } else if (key >= '1' && key <= '9') {
@@ -329,7 +330,6 @@ function updateCandidateBtnStates() {
     } else {
         maskBtn.classList.remove('active');
     }
-    // Le bouton + reste normal pour la restauration
 }
 
 // Mettre en évidence les cellules liées
@@ -374,11 +374,15 @@ function showMessage(text, type) {
 }
 
 // Ajouter à l'historique
-function addToHistory(grid) {
+function addToHistory(grid, masked = null) {
     // Supprimer tout ce qui vient après l'index actuel
     history = history.slice(0, historyIndex + 1);
-    // Ajouter le nouvel état
-    history.push(JSON.parse(JSON.stringify(grid)));
+    // Ajouter le nouvel état (grille et candidats masqués)
+    const state = {
+        grid: JSON.parse(JSON.stringify(grid)),
+        maskedCandidates: masked ? JSON.parse(JSON.stringify(masked)) : JSON.parse(JSON.stringify(maskedCandidates))
+    };
+    history.push(state);
     historyIndex = history.length - 1;
 }
 
@@ -386,7 +390,9 @@ function addToHistory(grid) {
 function undo() {
     if (historyIndex > 0) {
         historyIndex--;
-        sudokuGrid = JSON.parse(JSON.stringify(history[historyIndex]));
+        const prevState = history[historyIndex];
+        sudokuGrid = JSON.parse(JSON.stringify(prevState.grid));
+        maskedCandidates = JSON.parse(JSON.stringify(prevState.maskedCandidates));
         updateBoard();
         clearMessage();
     }
@@ -396,7 +402,9 @@ function undo() {
 function redo() {
     if (historyIndex < history.length - 1) {
         historyIndex++;
-        sudokuGrid = JSON.parse(JSON.stringify(history[historyIndex]));
+        const nextState = history[historyIndex];
+        sudokuGrid = JSON.parse(JSON.stringify(nextState.grid));
+        maskedCandidates = JSON.parse(JSON.stringify(nextState.maskedCandidates));
         updateBoard();
         clearMessage();
     }
@@ -406,13 +414,4 @@ function redo() {
 function clearMessage() {
     document.getElementById('message').textContent = '';
     document.getElementById('message').className = 'message';
-}
-
-// Masquer le dernier candidat masqué (comme undo pour les masquages)
-function unmaskLastHint() {
-    if (unmaskStack.length > 0) {
-        const lastMasked = unmaskStack.pop();
-        maskedCandidates[lastMasked.row][lastMasked.col][lastMasked.num] = false;
-        updateBoard();
-    }
 }
