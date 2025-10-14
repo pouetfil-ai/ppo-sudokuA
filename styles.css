@@ -41,16 +41,16 @@ h1 {
 }
 
 .hints-indicator {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: #ddd;
+    width: 26px;
+    height: 26px;
+    font-size: 18px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: color 0.3s;
+    color: #666;
 }
 
 .hints-indicator.active {
-    background-color: #4CAF50;
+    color: #4CAF50;
 }
 
 .candidate-btn {
