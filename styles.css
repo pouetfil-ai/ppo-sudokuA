@@ -140,7 +140,7 @@ button:hover, select:hover {
 }
 
 .cell.fixed {
-    background-color: #e8f5e8;
+    background-color: white;
     font-weight: bold;
 }
 
