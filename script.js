@@ -233,7 +233,7 @@ function showHints(cell, row, col) {
     }
 
     cell.innerHTML = '<div class="hints">' +
-        hints.map(num => `<div class="${num === selectedValue && selectedValue !== 0 ? 'hint-selected' : ''}">${num || ''}</div>`).join('') +
+        hints.map(num => `<div>${num || ''}</div>`).join('') +
         '</div>';
 }
 
@@ -249,6 +249,7 @@ function selectCell(cell) {
     cell.classList.add('selected');
     cell.focus();
     highlightRelated();
+    updateHintsHighlighting();
 }
 
 // Gestion des touches
@@ -390,6 +391,29 @@ function highlightRelated() {
 function clearHighlights() {
     document.querySelectorAll('.cell.related').forEach(cell => cell.classList.remove('related'));
     document.querySelectorAll('.cell.same-value').forEach(cell => cell.classList.remove('same-value'));
+}
+
+// Mettre à jour la mise en évidence des candidats
+function updateHintsHighlighting() {
+    // Effacer toutes les classes hint-selected
+    document.querySelectorAll('.hint-selected').forEach(hint => hint.classList.remove('hint-selected'));
+
+    if (selectedValue === 0 || !hintsVisible) return;
+
+    // Ajouter la classe hint-selected aux candidats correspondants dans les cases vides
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        if (sudokuGrid[row][col] === 0) {
+            const candidateDivs = cell.querySelectorAll('.hints > div');
+            candidateDivs.forEach(div => {
+                if (div.textContent === selectedValue.toString()) {
+                    div.classList.add('hint-selected');
+                }
+            });
+        }
+    });
 }
 
 // Afficher un message
