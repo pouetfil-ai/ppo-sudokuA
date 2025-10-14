@@ -331,6 +331,7 @@ button:hover, select:hover {
     align-items: center;
     width: 100%;
     height: 100%;
+    color: #333333c2;
 }
 
 .cell.selected .hints > div {
