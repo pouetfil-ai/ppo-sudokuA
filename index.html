@@ -8,27 +8,40 @@
 </head>
 <body>
     <div class="container">
-        <h1>Sudoku</h1>
-        <div class="controls">
-            <button id="new-game">Nouvelle Partie</button>
-            <button id="undo">↶</button>
-            <button id="redo">↷</button>
-            <button id="check-solution">Vérifier Solution</button>
-            <button id="clear-grid">Effacer Grille</button>
-            <div class="candidates-section">
-                <div id="hints-indicator" class="hints-indicator"></div>
-                <button id="mask-hint" class="candidate-btn">✎</button>
+        <h1>Sudoku by PouetPhil Team</h1>
+        <div id="menu" class="menu">
+            <h2>Bienvenue dans le Sudoku !</h2>
+            <div class="difficulty-selection">
+                <label for="menu-difficulty">Choisissez la difficulté :</label>
+                <select id="menu-difficulty">
+                    <option value="easy">Facile</option>
+                    <option value="medium" selected>Moyen</option>
+                    <option value="hard">Difficile</option>
+                </select>
             </div>
-            <select id="difficulty">
-                <option value="easy">Facile</option>
-                <option value="medium" selected>Moyen</option>
-                <option value="hard">Difficile</option>
-            </select>
+            <button id="start-game" class="start-btn">Commencer la Partie</button>
         </div>
-        <div class="sudoku-board" id="sudoku-board">
-            <!-- La grille sera générée en JavaScript -->
+        <div id="game-container" class="game-container hidden">
+            <div class="controls">
+                <button id="undo">↶</button>
+                <button id="redo">↷</button>
+                <button id="check-solution">Vérifier Solution</button>
+                <button id="clear-grid">Effacer Grille</button>
+                <div class="candidates-section">
+                    <div id="hints-indicator" class="hints-indicator"></div>
+                    <button id="mask-hint" class="candidate-btn">✎</button>
+                </div>
+                <select id="difficulty" class="hidden">
+                    <option value="easy">Facile</option>
+                    <option value="medium" selected>Moyen</option>
+                    <option value="hard">Difficile</option>
+                </select>
+            </div>
+            <div class="sudoku-board" id="sudoku-board">
+                <!-- La grille sera générée en JavaScript -->
+            </div>
+            <div id="message" class="message"></div>
         </div>
-        <div id="message" class="message"></div>
     </div>
     <script src="script.js"></script>
 </body>

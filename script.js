@@ -11,9 +11,7 @@ let maskMode = false; // Mode pour masquer un candidat
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
-    createBoard();
     setupEventListeners();
-    newGame();
 });
 
 // Créer la grille
@@ -37,7 +35,8 @@ function createBoard() {
 
 // Configurer les écouteurs d'événements
 function setupEventListeners() {
-    document.getElementById('new-game').addEventListener('click', newGame);
+    document.getElementById('start-game').addEventListener('click', startGame);
+    // document.getElementById('new-game').addEventListener('click', newGame); // Supprimé
     document.getElementById('undo').addEventListener('click', undo);
     document.getElementById('redo').addEventListener('click', redo);
     document.getElementById('check-solution').addEventListener('click', checkSolution);
@@ -49,6 +48,22 @@ function setupEventListeners() {
         if (selectedCell) selectedCell.focus();
     });
 
+}
+
+function startGame() {
+    // Récupérer la difficulté sélectionnée dans le menu
+    const selectedDifficulty = document.getElementById('menu-difficulty').value;
+
+    // Masquer le menu et afficher le jeu
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+
+    // Synchroniser la difficulté dans le sélecteur caché du jeu
+    document.getElementById('difficulty').value = selectedDifficulty;
+
+    // Créer la grille et démarrer la partie
+    createBoard();
+    newGame();
 }
 
 // Nouvelle partie
