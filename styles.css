@@ -144,6 +144,10 @@ button:hover, select:hover {
     font-weight: bold;
 }
 
+.cell.fixed.related {
+    background-color: #fff8e1;
+}
+
 .cell:nth-child(3n):not(:nth-child(9n)),
 .cell:nth-child(9n) {
     border-right: 2px solid #000;
