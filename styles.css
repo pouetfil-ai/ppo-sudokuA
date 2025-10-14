@@ -152,11 +152,13 @@ button:hover, select:hover {
 }
 
 .cell.fixed.selected {
-    background-color: #2196F3 !important;
+    background-color: #1976D2 !important;
+    color: white !important;
 }
 
 .cell.selected {
-    background-color: #2196F3;
+    background-color: #1976D2;
+    color: white;
 }
 
 .cell:nth-child(3n):not(:nth-child(9n)),
