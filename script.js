@@ -157,19 +157,122 @@ function fillGrid() {
     return true;
 }
 
-// Supprimer des cellules pour créer le puzzle
-function removeCells(count) {
+// Résoudre le Sudoku et compter les solutions (pour vérifier l'unicité)
+function solveSudoku(grid, findAllSolutions = false, maxSolutions = 1) {
+    let solutionsCount = 0;
+
+    function backtrack() {
+        for (let row = 0; row < 9; row++) {
+            for (let col = 0; col < 9; col++) {
+                if (grid[row][col] === 0) {
+                    // Essayer chaque nombre possible
+                    for (let num = 1; num <= 9; num++) {
+                        if (isValidMoveInGrid(grid, row, col, num)) {
+                            grid[row][col] = num;
+
+                            // Si on cherche toutes les solutions, continuer récursivement
+                            if (findAllSolutions) {
+                                backtrack();
+                                if (solutionsCount >= maxSolutions) return;
+                            } else {
+                                // Sinon, juste continuer jusqu'à trouver une solution ou pas
+                                if (backtrack()) return true;
+                            }
+
+                            // Backtrack
+                            grid[row][col] = 0;
+                        }
+                    }
+                    return false; // Pas de solution trouvée pour cette position
+                }
+            }
+        }
+
+        // Grille complète trouvée
+        solutionsCount++;
+        return findAllSolutions ? true : !findAllSolutions; // Retourner false si on cherche juste une, pour continuer à chercher
+    }
+
+    backtrack();
+
+    return findAllSolutions ? solutionsCount : (solutionsCount > 0);
+}
+
+// Vérifier si un mouvement est valide pour une grille donnée (utilité pour solveSudoku)
+function isValidMoveInGrid(grid, row, col, num) {
+    // Vérifier la ligne
+    for (let i = 0; i < 9; i++) {
+        if (grid[row][i] === num) return false;
+    }
+
+    // Vérifier la colonne
+    for (let i = 0; i < 9; i++) {
+        if (grid[i][col] === num) return false;
+    }
+
+    // Vérifier le bloc 3x3
+    const startRow = Math.floor(row / 3) * 3;
+    const startCol = Math.floor(col / 3) * 3;
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            if (grid[startRow + i][startCol + j] === num) return false;
+        }
+    }
+
+    return true;
+}
+
+// Supprimer des cellules pour créer le puzzle avec vérification d'unicité
+function removeCells(targetRemovedCount) {
     const positions = [];
     for (let i = 0; i < 81; i++) {
         positions.push(i);
     }
     shuffleArray(positions);
 
-    for (let i = 0; i < count; i++) {
+    let removedCount = 0;
+    let attempts = 0;
+    const maxAttempts = positions.length * 2; // Limiter pour éviter une boucle infinie
+
+    for (let i = 0; i < positions.length && removedCount < targetRemovedCount && attempts < maxAttempts; i++, attempts++) {
         const pos = positions[i];
         const row = Math.floor(pos / 9);
         const col = pos % 9;
+
+        // Sauter si déjà vide
+        if (sudokuGrid[row][col] === 0) continue;
+
+        // Sauvegarder la valeur avant de la supprimer
+        const originalValue = sudokuGrid[row][col];
         sudokuGrid[row][col] = 0;
+
+        // Créer une copie de la grille pour tester
+        const testGrid = sudokuGrid.map(r => r.slice());
+
+        // Vérifier l'unicité de la solution
+        const solutionsCount = solveSudoku(testGrid, true, 2); // Chercher au plus 2 solutions
+
+        if (solutionsCount === 1) {
+            // Unique solution, garder la suppression
+            removedCount++;
+        } else {
+            // Plusieurs solutions ou impossible, restaurer
+            sudokuGrid[row][col] = originalValue;
+        }
+    }
+
+    // Si on n'a pas atteint le nombre cible, procéder avec les suppressions restantes
+    // de manière plus agressive (sans vérifier l'unicité) pour éviter de rester bloqué
+    if (removedCount < targetRemovedCount) {
+        for (let i = 0; i < positions.length && removedCount < targetRemovedCount; i++) {
+            const pos = positions[i];
+            const row = Math.floor(pos / 9);
+            const col = pos % 9;
+            if (sudokuGrid[row][col] !== 0) {
+                sudokuGrid[row][col] = 0;
+                removedCount++;
+            }
+        }
     }
 }
 
