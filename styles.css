@@ -393,14 +393,18 @@ button:hover, select:hover {
     display: none !important;
 }
 
+/* Masquer le titre uniquement quand le jeu est actif */
 .game-container:not(.hidden) ~ .game-title {
     display: none !important;
 }
 
-/* Masquer le titre quand le jeu est actif */
-#game-container:not(.hidden) + .menu ~ .game-title,
-#game-container:not(.hidden) ~ .game-title {
-    display: none !important;
+/* S'assurer que le titre est visible seulement dans le menu */
+.game-title {
+    display: block;
+}
+
+.menu:not(.hidden) ~ .game-title {
+    display: block !important;
 }
 
 .team-credits {

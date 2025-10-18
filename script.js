@@ -137,6 +137,9 @@ function startGame() {
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('game-container').classList.remove('hidden');
 
+    // Masquer explicitement le titre du jeu
+    document.getElementById('game-title').classList.add('hidden');
+
     // Synchroniser la difficulté dans le sélecteur caché du jeu
     document.getElementById('difficulty').value = selectedDifficulty;
 
@@ -677,6 +680,8 @@ function redo() {
 function showMenu() {
     document.getElementById('menu').classList.remove('hidden');
     document.getElementById('game-container').classList.add('hidden');
+    // Réafficher le titre du jeu
+    document.getElementById('game-title').classList.remove('hidden');
 }
 
 // Mettre à jour l'état des boutons du numéro-pad
