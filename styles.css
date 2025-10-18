@@ -186,7 +186,7 @@ button:hover, select:hover {
     justify-content: flex-start;
     align-items: flex-start;
     gap: 8px; /* Espacement équilibré */
-    max-width: 525px; /* Légère augmentation de largeur */
+    width: 525px; /* Fixed width to prevent compression */
     margin: 0 auto;
 }
 
@@ -197,6 +197,7 @@ button:hover, select:hover {
     background-color: #000;
     border: 2px solid #000;
     max-width: 458px;
+    height: 458px;
     margin: 0; /* Supprimer tous les marges */
 }
 
@@ -311,13 +312,13 @@ button:hover, select:hover {
 .number-pad {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 1px;
     height: 458px; /* Même hauteur que la grille Sudoku */
 }
 
 .number-pad-button {
     width: 50px;
-    height: calc((458px - 8 * 8px) / 9); /* Répartition égale sur 9 boutons */
+    height: 50px;
     border: none;
     border-radius: 8px;
     background-color: white;
@@ -448,47 +449,13 @@ button:hover, select:hover {
         max-width: 90vw;
     }
 
-    .game-layout {
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
+    .hints {
+        font-size: 12px;
     }
 
-    .sudoku-board {
-        grid-template-columns: repeat(9, 1fr);
-        max-width: min(500px, calc(100vw - 20px));
-        width: 100%;
-    }
-
-    .cell {
-        max-width: 55.55px;
-        width: min(55.55px, calc((100vw - 20px) / 9));
-        height: min(55.55px, calc((100vw - 20px) / 9));
-        font-size: min(27.77px, calc((100vw - 20px) / 9 * 0.5));
-        min-width: 25px;
-        min-height: 25px;
-    }
-
-    .number-pad {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        gap: 3px;
-        width: min(500px, calc(100vw - 20px));
-        height: auto;
-        margin: 0 auto;
-        justify-content: center;
-    }
-
-    .number-pad-button {
-        width: calc((min(500px, 100vw - 20px) - 3px * 8) / 9);
-        height: calc((min(500px, 100vw - 20px) - 3px * 8) / 9);
-        font-size: calc((min(500px, 100vw - 20px) - 3px * 8) / 9 * 0.4);
-        flex: 0 0 auto;
-        max-width: 55px;
-        max-height: 55px;
-        min-width: 25px;
-        min-height: 25px;
+    .hints > div {
+        width: 10px;
+        height: 10px;
     }
 
     .hints {
@@ -522,42 +489,7 @@ button:hover, select:hover {
         font-size: 10px;
     }
 
-    .sudoku-board {
-        grid-template-columns: repeat(9, 1fr);
-        max-width: min(400px, calc(100vw - 10px));
-        width: 100%;
-    }
 
-    .cell {
-        max-width: 44.44px;
-        width: min(44.44px, calc((100vw - 10px) / 9));
-        height: min(44.44px, calc((100vw - 10px) / 9));
-        font-size: min(26.66px, calc((100vw - 10px) / 9 * 0.6));
-        min-width: 20px;
-        min-height: 20px;
-    }
-
-    .number-pad {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        gap: 2px;
-        width: min(400px, calc(100vw - 10px));
-        height: auto;
-        margin: 0 auto;
-        justify-content: center;
-    }
-
-    .number-pad-button {
-        width: calc((min(400px, 100vw - 10px) - 2px * 8) / 9);
-        height: calc((min(400px, 100vw - 10px) - 2px * 8) / 9);
-        font-size: calc((min(400px, 100vw - 10px) - 2px * 8) / 9 * 0.35);
-        flex: 0 0 auto;
-        max-width: 44px;
-        max-height: 44px;
-        min-width: 20px;
-        min-height: 20px;
-    }
 
     .hints {
         font-size: 12px;
