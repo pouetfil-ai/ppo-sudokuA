@@ -19,8 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(reg => {
-                console.log('Service Worker enregistré');
-
                 // Vérifier les mises à jour du service worker
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;
@@ -40,8 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         showUpdateNotification();
                     }
                 });
-            })
-            .catch(err => console.log('Erreur SW', err));
+            });
     }
 });
 
@@ -204,13 +201,14 @@ function generatePuzzle(difficulty) {
 
 // Remplir la grille avec un Sudoku valide
 function fillGrid() {
-    // Utiliser un algorithme de génération simple
-    // Cette implémentation basique peut créer des puzzles valides
+    // Utiliser un algorithme de génération simple avec limite d'essais
     const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const maxTries = 5; // Limiter les tentatives par cellule pour éviter boucle infinie
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
             if (sudokuGrid[row][col] === 0) {
                 shuffleArray(nums);
+                let placed = false;
                 for (let num of nums) {
                     if (isValidMove(row, col, num)) {
                         sudokuGrid[row][col] = num;
@@ -220,7 +218,7 @@ function fillGrid() {
                         sudokuGrid[row][col] = 0;
                     }
                 }
-                return false;
+                return false; // Échec si aucun numero ne convenait
             }
         }
     }
@@ -289,6 +287,19 @@ function isValidMoveInGrid(grid, row, col, num) {
         }
     }
 
+    return true;
+}
+
+// Vérifier si la victoire est atteinte
+function checkWin() {
+    // Vérifier si toutes les cellules sont remplies et correctes
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            if (sudokuGrid[row][col] === 0 || sudokuGrid[row][col] !== solutionGrid[row][col]) {
+                return false;
+            }
+        }
+    }
     return true;
 }
 
@@ -485,32 +496,16 @@ function handleKeyPress(event) {
         updateBoard();
         addToHistory(sudokuGrid);
         clearMessage();
+        // Vérifier la victoire automatiquement
+        if (checkWin()) {
+            showMessage('Félicitations ! Solution correcte !', 'success');
+        }
     } else if (key === 'Backspace' || key === 'Delete') {
         const oldValue = sudokuGrid[row][col];
         sudokuGrid[row][col] = 0;
         updateBoard();
         addToHistory(sudokuGrid);
         clearMessage();
-    }
-}
-
-// Vérifier la solution
-function checkSolution() {
-    let complete = true;
-    let valid = true;
-
-    for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-            if (sudokuGrid[row][col] === 0) {
-                complete = false;
-            } else if (!isValidMove(row, col, sudokuGrid[row][col])) {
-                valid = false;
-            }
-        }
-    }
-
-    if (complete && valid) {
-        showMessage('Félicitations ! Solution correcte !', 'success');
     }
 }
 
@@ -748,6 +743,10 @@ function onNumberPadClick(num) {
         addToHistory(sudokuGrid);
         clearMessage();
         updateNumberPadState(); // Mettre à jour après insertion
+        // Vérifier la victoire automatiquement
+        if (checkWin()) {
+            showMessage('Félicitations ! Solution correcte !', 'success');
+        }
     }
 }
 

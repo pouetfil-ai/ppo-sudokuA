@@ -10,15 +10,12 @@ const urlsToCache = [
 
 // Installation du service worker
 self.addEventListener('install', event => {
-  console.log('Service Worker: Installation en cours');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Service Worker: Cache ouvert, ajout des fichiers');
         return cache.addAll(urlsToCache);
       })
       .then(() => {
-        console.log('Service Worker: Installation terminée');
         // Forcer l'activation du nouveau service worker
         return self.skipWaiting();
       })
@@ -27,21 +24,17 @@ self.addEventListener('install', event => {
 
 // Activation du service worker
 self.addEventListener('activate', event => {
-  console.log('Service Worker: Activation en cours');
   event.waitUntil(
     caches.keys().then(cacheNames => {
-      console.log('Service Worker: Suppression des anciens caches');
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Suppression du cache', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
     .then(() => {
-      console.log('Service Worker: Activation terminée');
       // Prendre le contrôle de tous les clients immédiatement
       return self.clients.claim();
     })
@@ -68,7 +61,6 @@ self.addEventListener('fetch', event => {
       })
       .catch(() => {
         // Si la requête réseau échoue, utiliser le cache
-        console.log('Service Worker: Réseau indisponible, utilisation du cache pour', event.request.url);
         return caches.match(event.request)
           .then(response => {
             if (response) {
