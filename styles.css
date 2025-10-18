@@ -306,13 +306,13 @@ button:hover, select:hover {
 
 .cell:nth-child(3n):not(:nth-child(9n)),
 .cell:nth-child(9n) {
-    border-right: 1px solid #000;
+    border-right: 2px solid #000;
 }
 
 .cell:nth-child(n+19):nth-child(-n+27),
 .cell:nth-child(n+46):nth-child(-n+54),
 .cell:nth-child(n+73):nth-child(-n+81) {
-    border-bottom: 1px solid #000;
+    border-bottom: 2px solid #000;
 }
 
 .hints {
