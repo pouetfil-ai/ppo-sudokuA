@@ -109,7 +109,7 @@ h1 {
     flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
 }
 
 .candidates-section {
@@ -165,8 +165,8 @@ h1 {
 }
 
 button, select {
-    padding: 8px 16px;
-    font-size: 14px;
+    padding: 4px 12px;
+    font-size: 12px;
     cursor: pointer;
     background-color: #66BB6A;
     color: white;
@@ -184,7 +184,7 @@ button:hover, select:hover {
     justify-content: flex-start;
     align-items: flex-start;
     gap: 8px; /* Espacement équilibré */
-    width: 525px; /* Fixed width to prevent compression */
+    width: 458px; /* Fixed width to match board */
     margin: 0 auto;
 }
 
@@ -447,6 +447,15 @@ button:hover, select:hover {
         max-width: 90vw;
     }
 
+    .controls {
+        flex-wrap: nowrap;
+        width: 458px;
+        max-width: 100%;
+        justify-content: flex-start;
+        gap: 0px;
+        margin: 0 auto;
+    }
+
     .game-layout {
         flex-direction: column;
         align-items: center;
@@ -482,6 +491,14 @@ button:hover, select:hover {
 
     .menu h2 {
         font-size: 20px;
+    }
+
+    .controls {
+        gap: 0px;
+        justify-content: flex-start;
+        width: 458px;
+        max-width: 100%;
+        margin: 0 auto;
     }
 
     .team-credits {
