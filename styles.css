@@ -492,7 +492,7 @@ button:hover, select:hover {
     }
 
     .hints {
-        font-size: 8px;
+        font-size: 12px;
     }
 
     .hints > div {
@@ -560,11 +560,11 @@ button:hover, select:hover {
     }
 
     .hints {
-        font-size: 7px;
+        font-size: 12px;
     }
 
     .hints > div {
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
     }
 }
