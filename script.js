@@ -15,6 +15,12 @@ let highlightMode = false; // Mode pour marquer un candidat
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
+    // Enregistrer le service worker pour PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker enregistré'))
+            .catch(err => console.log('Erreur SW', err));
+    }
 });
 
 // Créer la grille
@@ -30,6 +36,7 @@ function createBoard() {
             cell.dataset.col = col;
             cell.tabIndex = 0;
             cell.addEventListener('click', () => selectCell(cell));
+            cell.addEventListener('touchstart', (e) => { e.preventDefault(); selectCell(cell); });
             cell.addEventListener('keydown', handleKeyPress);
             board.appendChild(cell);
         }
@@ -46,32 +53,37 @@ function createNumberPad() {
         button.className = 'number-pad-button';
         button.textContent = num;
         button.addEventListener('click', () => onNumberPadClick(num));
+        button.addEventListener('touchstart', (e) => { e.preventDefault(); onNumberPadClick(num); });
         pad.appendChild(button);
     }
 }
 
 // Configurer les écouteurs d'événements
 function setupEventListeners() {
-    document.getElementById('start-game').addEventListener('click', startGame);
-    // document.getElementById('new-game').addEventListener('click', newGame); // Supprimé
-    document.getElementById('menu-btn').addEventListener('click', showMenu);
-    document.getElementById('undo').addEventListener('click', undo);
-    document.getElementById('redo').addEventListener('click', redo);
-    document.getElementById('clear-grid').addEventListener('click', clearGrid);
-    document.getElementById('hints-indicator').addEventListener('click', toggleHints);
-    document.getElementById('mask-hint').addEventListener('click', () => {
-        maskMode = !maskMode;
-        if (maskMode) highlightMode = false; // Désactiver le jaune si le noir est activé
-        updateCandidateBtnStates();
-        if (selectedCell) selectedCell.focus();
-    });
-    document.getElementById('highlight-hint').addEventListener('click', () => {
-        highlightMode = !highlightMode;
-        if (highlightMode) maskMode = false; // Désactiver le noir si le jaune est activé
-        updateCandidateBtnStates();
-        if (selectedCell) selectedCell.focus();
-    });
+    const addTouchAndClick = (elementId, handler) => {
+        const element = document.getElementById(elementId);
+        element.addEventListener('click', handler);
+        element.addEventListener('touchstart', (e) => { e.preventDefault(); handler(); });
+    };
 
+    addTouchAndClick('start-game', startGame);
+    addTouchAndClick('menu-btn', showMenu);
+    addTouchAndClick('undo', undo);
+    addTouchAndClick('redo', redo);
+    addTouchAndClick('clear-grid', clearGrid);
+    addTouchAndClick('hints-indicator', toggleHints);
+    addTouchAndClick('mask-hint', () => {
+        maskMode = !maskMode;
+        if (maskMode) highlightMode = false;
+        updateCandidateBtnStates();
+        if (selectedCell) selectedCell.focus();
+    });
+    addTouchAndClick('highlight-hint', () => {
+        highlightMode = !highlightMode;
+        if (highlightMode) maskMode = false;
+        updateCandidateBtnStates();
+        if (selectedCell) selectedCell.focus();
+    });
 }
 
 function startGame() {

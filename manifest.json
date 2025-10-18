@@ -1,0 +1,19 @@
+{
+  "name": "Jeu de Sudoku",
+  "short_name": "Sudoku",
+  "description": "Jeu de Sudoku jouable hors ligne",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#667eea",
+  "background_color": "#aab7f0",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

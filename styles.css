@@ -411,6 +411,7 @@ button:hover, select:hover {
     }
 
     .sudoku-board {
+        grid-template-columns: repeat(9, 30px);
         max-width: 300px;
     }
 
@@ -445,6 +446,15 @@ button:hover, select:hover {
 }
 
 @media (max-width: 480px) {
+    .container {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+
     .menu {
         padding: 20px 0;
     }
@@ -461,24 +471,25 @@ button:hover, select:hover {
     }
 
     .sudoku-board {
-        max-width: 300px;
+        grid-template-columns: repeat(9, 28px);
+        max-width: 280px;
     }
 
     .cell {
-        width: 30px;
-        height: 30px;
-        font-size: 20px;
+        width: 28px;
+        height: 28px;
+        font-size: 18px;
     }
 
     .number-pad {
         grid-template-columns: repeat(3, 1fr);
         gap: 6px;
-        width: 300px;
+        width: 280px;
     }
 
     .number-pad-button {
-        width: 35px;
-        height: 35px;
+        width: 32px;
+        height: 32px;
         font-size: 12px;
     }
 
@@ -487,7 +498,7 @@ button:hover, select:hover {
     }
 
     .hints > div {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
     }
 }
