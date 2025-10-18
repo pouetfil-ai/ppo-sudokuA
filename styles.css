@@ -40,7 +40,7 @@ h1 {
     text-align: center;
     color: #333;
     font-size: 3.5em;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
     background: linear-gradient(45deg, #667eea, #764ba2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -53,19 +53,19 @@ h1 {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 40px 0;
+    padding: 25px 0;
     animation: fadeIn 1s ease-in-out;
 }
 
 .menu h2 {
     font-size: 1.5em;
     color: #555;
-    margin: 20px 0 30px 0;
+    margin: 10px 0 20px 0;
     font-weight: 300;
 }
 
 .difficulty-selection {
-    margin: 25px 0;
+    margin: 15px 0;
 }
 
 .difficulty-selection label {
@@ -102,7 +102,7 @@ h1 {
     border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-top: 20px;
+    margin-top: 15px;
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
     position: relative;
     overflow: hidden;
@@ -393,6 +393,16 @@ button:hover, select:hover {
     display: none !important;
 }
 
+.game-container:not(.hidden) ~ .game-title {
+    display: none !important;
+}
+
+/* Masquer le titre quand le jeu est actif */
+#game-container:not(.hidden) + .menu ~ .game-title,
+#game-container:not(.hidden) ~ .game-title {
+    display: none !important;
+}
+
 .team-credits {
     position: fixed;
     bottom: 10px;
@@ -472,6 +482,11 @@ button:hover, select:hover {
 }
 
 @media (max-width: 768px) {
+    .container {
+        padding: 20px;
+        max-width: 90vw;
+    }
+
     .game-layout {
         flex-direction: column;
         align-items: center;
@@ -479,28 +494,42 @@ button:hover, select:hover {
     }
 
     .sudoku-board {
-        grid-template-columns: repeat(9, 30px);
-        max-width: 300px;
+        grid-template-columns: repeat(9, minmax(25px, 32px));
+        max-width: min(320px, calc(100vw - 40px));
+        width: fit-content;
     }
 
     .cell {
-        width: 30px;
-        height: 30px;
-        font-size: 20px;
+        width: calc((100vw - 40px) / 9);
+        height: calc((100vw - 40px) / 9);
+        font-size: calc((100vw - 40px) / 9 * 0.5);
+        max-width: 32px;
+        max-height: 32px;
+        min-width: 25px;
+        min-height: 25px;
     }
 
     .number-pad {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-        width: 300px;
-        height: auto; /* Retour à hauteur automatique pour mobile */
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 3px;
+        width: calc(100vw - 40px);
+        max-width: 320px;
+        height: auto;
+        margin: 0 auto;
+        justify-content: center;
     }
 
     .number-pad-button {
-        width: 100%;
-        height: 40px;
-        font-size: 14px;
+        width: calc((100vw - 40px - 3px * 8) / 9);
+        height: calc((100vw - 40px - 3px * 8) / 9);
+        font-size: calc((100vw - 40px - 3px * 8) / 9 * 0.4);
+        flex: 0 0 auto;
+        max-width: 35px;
+        max-height: 35px;
+        min-width: 25px;
+        min-height: 25px;
     }
 
     .hints {
@@ -516,11 +545,7 @@ button:hover, select:hover {
 @media (max-width: 480px) {
     .container {
         padding: 15px;
-    }
-
-    h1 {
-        font-size: 2em;
-        margin-bottom: 20px;
+        max-width: 95vw;
     }
 
     .menu {
@@ -539,30 +564,46 @@ button:hover, select:hover {
     }
 
     .sudoku-board {
-        grid-template-columns: repeat(9, 28px);
-        max-width: 280px;
+        grid-template-columns: repeat(9, minmax(20px, 30px));
+        max-width: calc(100vw - 30px);
+        width: fit-content;
     }
 
     .cell {
-        width: 28px;
-        height: 28px;
-        font-size: 18px;
+        width: calc((100vw - 30px) / 9);
+        height: calc((100vw - 30px) / 9);
+        font-size: calc((100vw - 30px) / 9 * 0.6);
+        max-width: 30px;
+        max-height: 30px;
+        min-width: 20px;
+        min-height: 20px;
     }
 
     .number-pad {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-        width: 280px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 2px;
+        width: calc(100vw - 30px);
+        max-width: 280px;
+        height: auto;
+        margin: 0 auto;
+        justify-content: center;
     }
 
     .number-pad-button {
-        width: 32px;
-        height: 32px;
-        font-size: 12px;
+        width: calc((100vw - 30px - 2px * 8) / 9);
+        height: calc((100vw - 30px - 2px * 8) / 9);
+        font-size: calc((100vw - 30px - 2px * 8) / 9 * 0.35);
+        flex: 0 0 auto;
+        max-width: 28px;
+        max-height: 28px;
+        min-width: 20px;
+        min-height: 20px;
     }
 
     .hints {
-        font-size: 8px;
+        font-size: 7px;
     }
 
     .hints > div {
