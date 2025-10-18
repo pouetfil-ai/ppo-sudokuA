@@ -344,6 +344,12 @@ button:hover, select:hover {
     font-weight: bold;
 }
 
+.hint-highlighted {
+    background-color: yellow;
+    color: black;
+    font-weight: bold;
+}
+
 .number-pad {
     display: flex;
     flex-direction: column;

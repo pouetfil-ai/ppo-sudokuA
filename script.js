@@ -9,6 +9,8 @@ let history = [];
 let historyIndex = -1;
 let maskedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat masqué
 let maskMode = false; // Mode pour masquer un candidat
+let highlightedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat marqué en jaune
+let highlightMode = false; // Mode pour marquer un candidat
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
@@ -58,7 +60,14 @@ function setupEventListeners() {
     document.getElementById('clear-grid').addEventListener('click', clearGrid);
     document.getElementById('hints-indicator').addEventListener('click', toggleHints);
     document.getElementById('mask-hint').addEventListener('click', () => {
-        maskMode = !maskMode; // Toggle le mode
+        maskMode = !maskMode;
+        if (maskMode) highlightMode = false; // Désactiver le jaune si le noir est activé
+        updateCandidateBtnStates();
+        if (selectedCell) selectedCell.focus();
+    });
+    document.getElementById('highlight-hint').addEventListener('click', () => {
+        highlightMode = !highlightMode;
+        if (highlightMode) maskMode = false; // Désactiver le noir si le jaune est activé
         updateCandidateBtnStates();
         if (selectedCell) selectedCell.focus();
     });
@@ -93,12 +102,15 @@ function newGame() {
     // Réinitialiser l'historique
     const initialState = {
         grid: JSON.parse(JSON.stringify(sudokuGrid)),
-        maskedCandidates: JSON.parse(JSON.stringify(maskedCandidates))
+        maskedCandidates: JSON.parse(JSON.stringify(maskedCandidates)),
+        highlightedCandidates: JSON.parse(JSON.stringify(highlightedCandidates))
     };
     history = [initialState];
     historyIndex = 0;
     // Réinitialiser les masquages de candidats
     maskedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false)));
+    highlightMode = false;
+    highlightedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false)));
     maskMode = false;
     // Réinitialiser les indicateurs actifs
     updateCandidateBtnStates();
@@ -353,9 +365,14 @@ function showHints(cell, row, col) {
         }
     }
 
-    cell.innerHTML = '<div class="hints">' +
-        hints.map(num => `<div>${num || ''}</div>`).join('') +
-        '</div>';
+    // Créer les divs avec fond jaune si marqués
+    const hintDivs = hints.map((num, index) => {
+        const numValue = index + 1;
+        const className = highlightedCandidates[row][col][numValue] ? 'hint-highlighted' : '';
+        return `<div class="${className}">${num || ''}</div>`;
+    });
+
+    cell.innerHTML = '<div class="hints">' + hintDivs.join('') + '</div>';
 }
 
 // Sélectionner une cellule
@@ -384,14 +401,24 @@ function handleKeyPress(event) {
     if (initialGrid[row][col] !== 0) return; // Cellule fixe
 
     const key = event.key;
-    if (maskMode && key >= '1' && key <= '9') {
+    if (highlightMode && key >= '1' && key <= '9') {
+        // (Dé)marquer un candidat en jaune
+        const num = parseInt(key);
+        if (isValidMove(row, col, num)) {
+            highlightedCandidates[row][col][num] = !highlightedCandidates[row][col][num];
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+            clearMessage();
+        }
+    } else if (maskMode && key >= '1' && key <= '9') {
         // Masquer un candidat
         const num = parseInt(key);
         if (isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
             maskedCandidates[row][col][num] = true;
             updateBoard();
             updateCandidateBtnStates();
-            addToHistory(sudokuGrid, maskedCandidates);
+            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
             clearMessage();
         }
     } else if (key >= '1' && key <= '9') {
@@ -462,10 +489,16 @@ function updateHintsIndicator() {
 // Mettre à jour l'état visuel des boutons candidats
 function updateCandidateBtnStates() {
     const maskBtn = document.getElementById('mask-hint');
+    const highlightBtn = document.getElementById('highlight-hint');
     if (maskMode) {
         maskBtn.classList.add('active');
     } else {
         maskBtn.classList.remove('active');
+    }
+    if (highlightMode) {
+        highlightBtn.classList.add('active');
+    } else {
+        highlightBtn.classList.remove('active');
     }
 }
 
@@ -546,13 +579,14 @@ function showMessage(text, type) {
 }
 
 // Ajouter à l'historique
-function addToHistory(grid, masked = null) {
+function addToHistory(grid, masked = null, highlighted = null) {
     // Supprimer tout ce qui vient après l'index actuel
     history = history.slice(0, historyIndex + 1);
     // Ajouter le nouvel état (grille et candidats masqués)
     const state = {
         grid: JSON.parse(JSON.stringify(grid)),
-        maskedCandidates: masked ? JSON.parse(JSON.stringify(masked)) : JSON.parse(JSON.stringify(maskedCandidates))
+        maskedCandidates: masked ? JSON.parse(JSON.stringify(masked)) : JSON.parse(JSON.stringify(maskedCandidates)),
+        highlightedCandidates: highlighted ? JSON.parse(JSON.stringify(highlighted)) : JSON.parse(JSON.stringify(highlightedCandidates))
     };
     history.push(state);
     historyIndex = history.length - 1;
@@ -565,6 +599,7 @@ function undo() {
         const prevState = history[historyIndex];
         sudokuGrid = JSON.parse(JSON.stringify(prevState.grid));
         maskedCandidates = JSON.parse(JSON.stringify(prevState.maskedCandidates));
+        highlightedCandidates = JSON.parse(JSON.stringify(prevState.highlightedCandidates));
         updateBoard();
         clearMessage();
     }
@@ -577,6 +612,7 @@ function redo() {
         const nextState = history[historyIndex];
         sudokuGrid = JSON.parse(JSON.stringify(nextState.grid));
         maskedCandidates = JSON.parse(JSON.stringify(nextState.maskedCandidates));
+        highlightedCandidates = JSON.parse(JSON.stringify(nextState.highlightedCandidates));
         updateBoard();
         clearMessage();
     }
@@ -627,7 +663,14 @@ function onNumberPadClick(num) {
 
     if (initialGrid[row][col] !== 0) return; // Cellule fixe
 
-    if (maskMode && isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
+    if (highlightMode && isValidMove(row, col, num)) {
+        // (Dé)marquer un candidat en jaune avec les boutons du pad
+        highlightedCandidates[row][col][num] = !highlightedCandidates[row][col][num];
+        updateBoard();
+        updateCandidateBtnStates();
+        addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+        clearMessage();
+    } else if (maskMode && isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
         // Masquer un candidat en mode crayon
         maskedCandidates[row][col][num] = true;
         updateBoard();
