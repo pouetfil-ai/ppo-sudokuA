@@ -15,13 +15,56 @@ let highlightMode = false; // Mode pour marquer un candidat
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
-    // Enregistrer le service worker pour PWA
+    // Enregistrer le service worker pour PWA avec gestion des mises à jour
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('Service Worker enregistré'))
+            .then(reg => {
+                console.log('Service Worker enregistré');
+
+                // Vérifier les mises à jour du service worker
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // Nouvelle version disponible
+                                showUpdateNotification();
+                            }
+                        });
+                    }
+                });
+
+                // Écouter les messages du service worker
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data && event.data.type === 'SW_UPDATE_READY') {
+                        showUpdateNotification();
+                    }
+                });
+            })
             .catch(err => console.log('Erreur SW', err));
     }
 });
+
+// Afficher une notification de mise à jour disponible
+function showUpdateNotification() {
+    // Créer la notification de mise à jour
+    const updateDiv = document.createElement('div');
+    updateDiv.id = 'update-notification';
+    updateDiv.className = 'update-notification';
+    updateDiv.innerHTML = `
+        <div class="update-content">
+            <p>Une nouvelle version est disponible !</p>
+            <button id="update-btn" class="update-btn">Mettre à jour</button>
+        </div>
+    `;
+
+    document.body.appendChild(updateDiv);
+
+    // Ajouter l'événement au bouton de mise à jour
+    document.getElementById('update-btn').addEventListener('click', () => {
+        window.location.reload();
+    });
+}
 
 // Créer la grille
 function createBoard() {
