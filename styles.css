@@ -300,15 +300,19 @@ button:hover, select:hover {
     color: white !important;
 }
 
+.cell {
+    border: 0.5px solid #000;
+}
+
 .cell:nth-child(3n):not(:nth-child(9n)),
 .cell:nth-child(9n) {
-    border-right: 2px solid #000;
+    border-right: 1px solid #000;
 }
 
 .cell:nth-child(n+19):nth-child(-n+27),
 .cell:nth-child(n+46):nth-child(-n+54),
 .cell:nth-child(n+73):nth-child(-n+81) {
-    border-bottom: 2px solid #000;
+    border-bottom: 1px solid #000;
 }
 
 .hints {
@@ -412,6 +416,8 @@ button:hover, select:hover {
 
     .sudoku-board {
         grid-template-columns: repeat(9, 30px);
+        gap: 0px;
+        background-color: transparent;
         max-width: 300px;
     }
 
@@ -472,6 +478,8 @@ button:hover, select:hover {
 
     .sudoku-board {
         grid-template-columns: repeat(9, 28px);
+        gap: 0px;
+        background-color: transparent;
         max-width: 280px;
     }
 
