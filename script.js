@@ -13,6 +13,7 @@ let highlightedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => 
 let highlightMode = false; // Mode pour marquer un candidat
 let redMarkedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat marqué en rouge
 let redMode = false; // Mode pour marquer un candidat en rouge
+let isCustomMode = false; // Mode création de grille personnalisée
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
@@ -109,6 +110,8 @@ function setupEventListeners() {
     };
 
     addTouchAndClick('start-game', startGame);
+    addTouchAndClick('create-custom', startCustomGridCreator);
+    addTouchAndClick('start-custom-game', startCustomGame);
     addTouchAndClick('menu-btn', showMenu);
     addTouchAndClick('undo', undo);
     addTouchAndClick('redo', redo);
@@ -154,6 +157,152 @@ function startGame() {
     createBoard();
     createNumberPad();
     newGame();
+}
+
+// Démarrer le créateur de grille personnalisée
+function startCustomGridCreator() {
+    // Activer le mode création personnalisée
+    isCustomMode = true;
+
+    // Masquer le menu et afficher le jeu
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+
+    // Masquer explicitement le titre du jeu
+    document.getElementById('game-title').classList.add('hidden');
+
+    // Créer la grille vide et initialiser le mode création
+    createBoard();
+    createNumberPad();
+    initializeCustomGrid();
+}
+
+// Initialiser une grille complètement vide pour le mode création personnalisée
+function initializeCustomGrid() {
+    // Réinitialiser toutes les grilles à zéro (aucune cellule fixe)
+    sudokuGrid = Array(9).fill().map(() => Array(9).fill(0));
+    initialGrid = Array(9).fill().map(() => Array(9).fill(0));
+    solutionGrid = Array(9).fill().map(() => Array(9).fill(0));
+
+    // Réinitialiser l'historique pour ce mode
+    history = [];
+    historyIndex = -1;
+
+    // Ajouter l'état initial à l'historique
+    const initialState = {
+        grid: JSON.parse(JSON.stringify(sudokuGrid)),
+        maskedCandidates: JSON.parse(JSON.stringify(maskedCandidates)),
+        highlightedCandidates: JSON.parse(JSON.stringify(highlightedCandidates)),
+        redMarkedCandidates: JSON.parse(JSON.stringify(redMarkedCandidates))
+    };
+    history.push(initialState);
+    historyIndex = 0;
+
+    // Mettre à jour l'affichage
+    updateBoard();
+    updateHintsIndicator();
+    clearMessage();
+
+    // Afficher le bouton "Démarrer le Jeu"
+    document.getElementById('start-custom-game').classList.remove('hidden');
+
+    // Afficher un message d'instruction
+    showMessage("Mode Création : Remplissez librement la grille avec vos chiffres, puis cliquez sur 'Démarrer le Jeu' pour jouer.", "info");
+}
+
+// Démarrer le jeu avec une grille personnalisée
+function startCustomGame() {
+    // Vérifier s'il y a au moins quelques chiffres dans la grille
+    let filledCells = 0;
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            if (sudokuGrid[row][col] !== 0) {
+                filledCells++;
+            }
+        }
+    }
+
+    if (filledCells < 5) {
+        showMessage("Votre grille doit contenir au minimum 5 chiffres pour pouvoir jouer !", "error");
+        return;
+    }
+
+    // Vérifier que la grille n'a pas de conflits évidents
+    if (hasConflicts()) {
+        showMessage("Votre grille contient des conflits ! Vérifiez que les chiffres ne se répètent pas dans les mêmes lignes, colonnes ou blocs 3×3.", "error");
+        return;
+    }
+
+    // Sauvegarder la grille saisie comme grille initiale
+    initialGrid = sudokuGrid.map(row => row.slice());
+
+    // Tenter de générer une solution complète
+    if (!generateSolutionFromCustomGrid()) {
+        showMessage("Impossible de générer une solution valide à partir de votre grille. Vérifiez qu'elle est correcte !", "error");
+        return;
+    }
+
+    // Passer du mode création au mode jeu normal
+    isCustomMode = false;
+
+    // Réinitialiser l'historique pour le jeu normal
+    history = [JSON.parse(JSON.stringify({
+        grid: sudokuGrid,
+        maskedCandidates: maskedCandidates,
+        highlightedCandidates: highlightedCandidates,
+        redMarkedCandidates: redMarkedCandidates
+    }))];
+    historyIndex = 0;
+
+    // Mettre à jour l'affichage et les contrôles
+    updateBoard();
+    updateHintsIndicator();
+    updateNumberPadState();
+
+    // Cacher le bouton "Démarrer le Jeu" une fois lancé
+    document.getElementById('start-custom-game').classList.add('hidden');
+
+    // Afficher un message de succès
+    showMessage("Jeu démarré ! Bonne chance !", "success");
+}
+
+// Vérifier s'il y a des conflits évidents dans la grille actuelle
+function hasConflicts() {
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            const value = sudokuGrid[row][col];
+            if (value !== 0) {
+                // Vérifier temporairement
+                sudokuGrid[row][col] = 0;
+                if (!isValidMove(row, col, value)) {
+                    sudokuGrid[row][col] = value; // remettre
+                    return true;
+                }
+                sudokuGrid[row][col] = value;
+            }
+        }
+    }
+    return false;
+}
+
+// Générer une solution complète à partir de la grille personnalisée partiellement remplie
+function generateSolutionFromCustomGrid() {
+    // Sauvegarder la grille personnalisée
+    const customGrid = sudokuGrid.map(row => row.slice());
+
+    // Essayer de résoudre avec la fonction de résolution existante
+    const result = solveSudoku(customGrid);
+    if (result) {
+        // Copier la solution vers solutionGrid
+        for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+                solutionGrid[i][j] = customGrid[i][j];
+            }
+        }
+        return true;
+    }
+
+    return false;
 }
 
 // Nouvelle partie
@@ -488,52 +637,69 @@ function handleKeyPress(event) {
     if (initialGrid[row][col] !== 0) return; // Cellule fixe
 
     const key = event.key;
-    if (highlightMode && key >= '1' && key <= '9') {
-        // (Dé)marquer un candidat en jaune
-        const num = parseInt(key);
-        if (isValidMove(row, col, num)) {
-            highlightedCandidates[row][col][num] = !highlightedCandidates[row][col][num];
+
+    if (isCustomMode) {
+        // Mode création personnalisée : insertion libre sans vérification de validité
+        if (key >= '1' && key <= '9') {
+            sudokuGrid[row][col] = parseInt(key);
             updateBoard();
-            updateCandidateBtnStates();
-            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+            addToHistory(sudokuGrid);
+            clearMessage();
+        } else if (key === 'Backspace' || key === 'Delete') {
+            sudokuGrid[row][col] = 0;
+            updateBoard();
+            addToHistory(sudokuGrid);
             clearMessage();
         }
-    } else if (redMode && key >= '1' && key <= '9') {
-        // (Dé)marquer un candidat en rouge
-        const num = parseInt(key);
-        if (isValidMove(row, col, num)) {
-            redMarkedCandidates[row][col][num] = !redMarkedCandidates[row][col][num];
+    } else {
+        // Mode jeu normal : vérifications de validité
+        if (highlightMode && key >= '1' && key <= '9') {
+            // (Dé)marquer un candidat en jaune
+            const num = parseInt(key);
+            if (isValidMove(row, col, num)) {
+                highlightedCandidates[row][col][num] = !highlightedCandidates[row][col][num];
+                updateBoard();
+                updateCandidateBtnStates();
+                addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+                clearMessage();
+            }
+        } else if (redMode && key >= '1' && key <= '9') {
+            // (Dé)marquer un candidat en rouge
+            const num = parseInt(key);
+            if (isValidMove(row, col, num)) {
+                redMarkedCandidates[row][col][num] = !redMarkedCandidates[row][col][num];
+                updateBoard();
+                updateCandidateBtnStates();
+                addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates, redMarkedCandidates);
+                clearMessage();
+            }
+        } else if (maskMode && key >= '1' && key <= '9') {
+            // Masquer un candidat
+            const num = parseInt(key);
+            if (isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
+                maskedCandidates[row][col][num] = true;
+                updateBoard();
+                updateCandidateBtnStates();
+                addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+                clearMessage();
+            }
+        } else if (key >= '1' && key <= '9') {
+            const oldValue = sudokuGrid[row][col];
+            sudokuGrid[row][col] = parseInt(key);
             updateBoard();
-            updateCandidateBtnStates();
-            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates, redMarkedCandidates);
+            addToHistory(sudokuGrid);
+            clearMessage();
+            // Vérifier la victoire automatiquement
+            if (checkWin()) {
+                showMessage('Félicitations ! Solution correcte !', 'success');
+            }
+        } else if (key === 'Backspace' || key === 'Delete') {
+            const oldValue = sudokuGrid[row][col];
+            sudokuGrid[row][col] = 0;
+            updateBoard();
+            addToHistory(sudokuGrid);
             clearMessage();
         }
-    } else if (maskMode && key >= '1' && key <= '9') {
-        // Masquer un candidat
-        const num = parseInt(key);
-        if (isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
-            maskedCandidates[row][col][num] = true;
-            updateBoard();
-            updateCandidateBtnStates();
-            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
-            clearMessage();
-        }
-    } else if (key >= '1' && key <= '9') {
-        const oldValue = sudokuGrid[row][col];
-        sudokuGrid[row][col] = parseInt(key);
-        updateBoard();
-        addToHistory(sudokuGrid);
-        clearMessage();
-        // Vérifier la victoire automatiquement
-        if (checkWin()) {
-            showMessage('Félicitations ! Solution correcte !', 'success');
-        }
-    } else if (key === 'Backspace' || key === 'Delete') {
-        const oldValue = sudokuGrid[row][col];
-        sudokuGrid[row][col] = 0;
-        updateBoard();
-        addToHistory(sudokuGrid);
-        clearMessage();
     }
 }
 
@@ -714,6 +880,8 @@ function showMenu() {
     document.getElementById('game-container').classList.add('hidden');
     // Réafficher le titre du jeu
     document.getElementById('game-title').classList.remove('hidden');
+    // Cacher le bouton "Démarrer le Jeu" quand on retourne au menu
+    document.getElementById('start-custom-game').classList.add('hidden');
 }
 
 // Mettre à jour l'état des boutons du numéro-pad
@@ -755,41 +923,50 @@ function onNumberPadClick(num) {
 
     if (initialGrid[row][col] !== 0) return; // Cellule fixe
 
-    if (highlightMode && isValidMove(row, col, num)) {
-        // (Dé)marquer un candidat en jaune avec les boutons du pad
-        highlightedCandidates[row][col][num] = !highlightedCandidates[row][col][num];
-        updateBoard();
-        updateCandidateBtnStates();
-        addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
-        clearMessage();
-    } else if (redMode && isValidMove(row, col, num)) {
-        // (Dé)marquer un candidat en rouge avec les boutons du pad
-        redMarkedCandidates[row][col][num] = !redMarkedCandidates[row][col][num];
-        updateBoard();
-        updateCandidateBtnStates();
-        addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates, redMarkedCandidates);
-        clearMessage();
-    } else if (maskMode && isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
-        // Masquer un candidat en mode crayon
-        maskedCandidates[row][col][num] = true;
-        updateBoard();
-        updateCandidateBtnStates();
-        addToHistory(sudokuGrid, maskedCandidates);
-        clearMessage();
-    } else if (!maskMode && !isValidMove(row, col, num)) {
-        return; // Mouvement invalide, ne rien faire
-    } else if (!maskMode) {
-        // Placer le chiffre si mode normal et mouvement valide
+    if (isCustomMode) {
+        // Mode création personnalisée : insertion libre
         sudokuGrid[row][col] = num;
-        selectedValue = num; // Mettre à jour la valeur sélectionnée
         updateBoard();
-        updateHintsHighlighting(); // Mettre à jour la mise en évidence des candidats
         addToHistory(sudokuGrid);
         clearMessage();
-        updateNumberPadState(); // Mettre à jour après insertion
-        // Vérifier la victoire automatiquement
-        if (checkWin()) {
-            showMessage('Félicitations ! Solution correcte !', 'success');
+    } else {
+        // Mode jeu normal : vérifications de validité
+        if (highlightMode && isValidMove(row, col, num)) {
+            // (Dé)marquer un candidat en jaune avec les boutons du pad
+            highlightedCandidates[row][col][num] = !highlightedCandidates[row][col][num];
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+            clearMessage();
+        } else if (redMode && isValidMove(row, col, num)) {
+            // (Dé)marquer un candidat en rouge avec les boutons du pad
+            redMarkedCandidates[row][col][num] = !redMarkedCandidates[row][col][num];
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates, redMarkedCandidates);
+            clearMessage();
+        } else if (maskMode && isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
+            // Masquer un candidat en mode crayon
+            maskedCandidates[row][col][num] = true;
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates);
+            clearMessage();
+        } else if (!maskMode && !isValidMove(row, col, num)) {
+            return; // Mouvement invalide, ne rien faire
+        } else if (!maskMode) {
+            // Placer le chiffre si mode normal et mouvement valide
+            sudokuGrid[row][col] = num;
+            selectedValue = num; // Mettre à jour la valeur sélectionnée
+            updateBoard();
+            updateHintsHighlighting(); // Mettre à jour la mise en évidence des candidats
+            addToHistory(sudokuGrid);
+            clearMessage();
+            updateNumberPadState(); // Mettre à jour après insertion
+            // Vérifier la victoire automatiquement
+            if (checkWin()) {
+                showMessage('Félicitations ! Solution correcte !', 'success');
+            }
         }
     }
 }
