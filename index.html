@@ -45,14 +45,18 @@
                     <option value="hard">Difficile</option>
                 </select>
             </div>
-            <div class="game-layout">
-                <div class="sudoku-board" id="sudoku-board">
-                    <!-- La grille sera générée en JavaScript -->
+                <div class="game-layout">
+                    <div class="sudoku-board" id="sudoku-board">
+                        <!-- La grille sera générée en JavaScript -->
+                    </div>
+                    <div class="number-pad" id="number-pad">
+                        <!-- Les boutons de chiffres seront générés en JavaScript -->
+                    </div>
                 </div>
-                <div class="number-pad" id="number-pad">
-                    <!-- Les boutons de chiffres seront générés en JavaScript -->
+                <div class="hint-section">
+                    <button id="hint-btn" class="hint-btn">💡 Indice</button>
+                    <div id="hint-message" class="hint-message"></div>
                 </div>
-            </div>
             <div id="message" class="message"></div>
         </div>
     </div>

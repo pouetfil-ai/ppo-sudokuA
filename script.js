@@ -799,3 +799,1113 @@ function clearMessage() {
     document.getElementById('message').textContent = '';
     document.getElementById('message').className = 'message';
 }
+
+// Système d'indices intelligents
+
+// Écouteur d'événement pour le bouton indice
+document.getElementById('hint-btn').addEventListener('click', provideHint);
+
+// Calculer tous les candidats possibles pour la grille actuelle
+function calculateCandidates() {
+    const candidates = Array(9).fill().map(() => Array(9).fill().map(() => []));
+
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            if (sudokuGrid[row][col] === 0) {
+                candidates[row][col] = [];
+                for (let num = 1; num <= 9; num++) {
+                    if (isValidMove(row, col, num)) {
+                        candidates[row][col].push(num);
+                    }
+                }
+            }
+        }
+    }
+
+    return candidates;
+}
+
+// Offrir un indice au joueur
+function provideHint() {
+    const hintMessage = document.getElementById('hint-message');
+
+    // Si un indice est déjà affiché, le masquer
+    if (hintMessage.classList.contains('visible')) {
+        hintMessage.classList.remove('visible');
+        // Supprimer la mise en évidence des cellules
+        document.querySelectorAll('.hint-highlight').forEach(cell => {
+            cell.classList.remove('hint-highlight');
+        });
+        return;
+    }
+
+    // Vérifier d'abord les techniques faciles
+    const hint = findEasyHint();
+
+    if (hint) {
+        // Afficher le message d'indice
+        hintMessage.innerHTML = hint.message;
+        hintMessage.classList.add('visible');
+
+        // Mettre en évidence les cellules concernées si nécessaire
+        if (hint.cellsToHighlight) {
+            hint.cellsToHighlight.forEach(cell => {
+                cell.classList.add('hint-highlight');
+            });
+        }
+    } else {
+        hintMessage.innerHTML = "<strong>Aucune technique d'indice disponible pour le moment.</strong> Essayez d'activer l'affichage des candidats (🔢) pour découvrir plus de possibilités.";
+        hintMessage.classList.add('visible');
+    }
+    // Plus de timeout - l'indice reste visible jusqu'au prochain clic
+}
+
+// Trouver un indice facile
+function findEasyHint() {
+    const candidates = calculateCandidates();
+
+    // 1. Recherche des "Single Candidates" (cellules avec un seul candidat possible)
+    const singleCandidate = findSingleCandidate(candidates);
+    if (singleCandidate) {
+        return {
+            message: `La cellule <strong>${getCellNotation(singleCandidate.row, singleCandidate.col)}</strong> n'accepte que le chiffre <strong>${singleCandidate.value}</strong>. C'est un candidat unique (nude single).`,
+            cellsToHighlight: [document.querySelector(`.cell[data-row="${singleCandidate.row}"][data-col="${singleCandidate.col}"]`)]
+        };
+    }
+
+    // 2. Recherche des "Hidden Singles" (candidats qui n'apparaissent qu'une fois dans une unité)
+    const hiddenSingle = findHiddenSingle(candidates);
+    if (hiddenSingle) {
+        return {
+            message: `Dans ${hiddenSingle.unitType}, le chiffre <strong>${hiddenSingle.digit}</strong> ne peut être placé que dans la cellule <strong>${getCellNotation(hiddenSingle.row, hiddenSingle.col)}</strong>. C'est un candidat caché (hidden single).`,
+            cellsToHighlight: [document.querySelector(`.cell[data-row="${hiddenSingle.row}"][data-col="${hiddenSingle.col}"]`)]
+        };
+    }
+
+    // 3. Recherche des cellules manquant un dernier chiffre possible
+    const lastDigitInUnit = findLastDigitInUnit(candidates);
+    if (lastDigitInUnit) {
+        return {
+            message: `Dans ${lastDigitInUnit.unitType}, il ne manque que le chiffre <strong>${lastDigitInUnit.digit}</strong> à placer. Il va dans la cellule <strong>${getCellNotation(lastDigitInUnit.row, lastDigitInUnit.col)}</strong>.`,
+            cellsToHighlight: [document.querySelector(`.cell[data-row="${lastDigitInUnit.row}"][data-col="${lastDigitInUnit.col}"]`)]
+        };
+    }
+
+    // 4. Recherche des paires nues simples
+    const nakedPair = findNakedPair(candidates);
+    if (nakedPair) {
+        const cells = nakedPair.cells.map(([r, c]) => document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`));
+        return {
+            message: `Les cellules <strong>${nakedPair.cells.map(([r, c]) => getCellNotation(r, c)).join(' et ')}</strong> forment une paire nue avec les chiffres <strong>${nakedPair.digits.join(' et ')}</strong>. Ces chiffres ne peuvent pas être utilisés ailleurs dans leurs unités.`,
+            cellsToHighlight: cells
+        };
+    }
+
+    // 4b. Recherche des triplets nus
+    const nakedTriple = findNakedTriple(candidates);
+    if (nakedTriple) {
+        const cells = nakedTriple.cells.map(([r, c]) => document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`));
+        return {
+            message: `Les cellules <strong>${nakedTriple.cells.map(([r, c]) => getCellNotation(r, c)).join(', ')}</strong> forment un triplet nu avec les chiffres <strong>${nakedTriple.digits.sort().join(', ')}</strong>. Ces chiffres ne peuvent pas être utilisés ailleurs dans leur ${nakedTriple.unitType}.`,
+            cellsToHighlight: cells
+        };
+    }
+
+    // 4c. Recherche des triplets cachés
+    const hiddenTriple = findHiddenTriple(candidates);
+    if (hiddenTriple) {
+        const cells = hiddenTriple.cells.map(([r, c]) => document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`));
+        return {
+            message: `Dans ${hiddenTriple.unitType}, les cellules <strong>${hiddenTriple.cells.map(([r, c]) => getCellNotation(r, c)).join(', ')}</strong> ne peuvent contenir que les chiffres <strong>${hiddenTriple.digits.sort().join(', ')}</strong>. C'est un triplet caché.`,
+            cellsToHighlight: cells
+        };
+    }
+
+    // 5. Recherche d'un Y-Wing (technique avancée)
+    const yWing = findYWing(candidates);
+    if (yWing) {
+        const cells = yWing.cells.map(([r, c]) => document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`));
+        return {
+            message: `Y-Wing détecté ! Les cellules <strong>${yWing.cells.map(([r, c]) => getCellNotation(r, c)).join(', ')}</strong> forment un triangle. Le chiffre <strong>${yWing.digitToEliminate}</strong> peut être éliminé de la cellule <strong>${getCellNotation(yWing.eliminationCell[0], yWing.eliminationCell[1])}</strong>.`,
+            cellsToHighlight: cells
+        };
+    }
+
+    // 6. Recherche d'un X-Wing (technique avancée - Fish 2x2)
+    const xWing = findXWing(candidates);
+    if (xWing) {
+        const cells = xWing.cells.map(([r, c]) => document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`));
+        return {
+            message: `X-Wing détecté ! Pour le chiffre <strong>${xWing.digit}</strong>, les cellules <strong>${xWing.cells.map(([r, c]) => getCellNotation(r, c)).join(', ')}</strong> forment un rectangle. Ce chiffre peut être éliminé des autres cellules dans ces mêmes <strong>${xWing.type}es</strong>.`,
+            cellsToHighlight: cells
+        };
+    }
+
+    // 7. Recherche d'un Swordfish (technique avancée - Fish 3x3)
+    const swordfish = findSwordfish(candidates);
+    if (swordfish) {
+        const cells = swordfish.cells.map(([r, c]) => document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`));
+        return {
+            message: `Swordfish détecté ! Pour le chiffre <strong>${swordfish.digit}</strong>, les cellules <strong>${swordfish.cells.map(([r, c]) => getCellNotation(r, c)).join(', ')}</strong> forment un motif "poisson". Ce chiffre peut être éliminé des autres cellules dans ces mêmes <strong>${swordfish.type}es</strong>.`,
+            cellsToHighlight: cells
+        };
+    }
+
+    // 8. Recherche d'un Jellyfish (technique ultime - Fish 4x4)
+    const jellyfish = findJellyfish(candidates);
+    if (jellyfish) {
+        const cells = jellyfish.cells.map(([r, c]) => document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`));
+        return {
+            message: `Jellyfish détecté ! Pour le chiffre <strong>${jellyfish.digit}</strong>, les cellules <strong>${jellyfish.cells.map(([r, c]) => getCellNotation(r, c)).join(', ')}</strong> forment un patron extraordinaire de méduse. Ce chiffre peut être éliminé des autres cellules dans ces <strong>${jellyfish.type}es</strong>.`,
+            cellsToHighlight: cells
+        };
+    }
+
+    return null;
+}
+
+// Trouver un candidat unique (Nude Single)
+function findSingleCandidate(candidates) {
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            if (sudokuGrid[row][col] === 0 && candidates[row][col].length === 1) {
+                return {
+                    row: row,
+                    col: col,
+                    value: candidates[row][col][0]
+                };
+            }
+        }
+    }
+    return null;
+}
+
+// Trouver un candidat caché (Hidden Single)
+function findHiddenSingle(candidates) {
+    // Vérifier les lignes
+    for (let row = 0; row < 9; row++) {
+        const digitCounts = {};
+        const digitPositions = {};
+
+        for (let digit = 1; digit <= 9; digit++) {
+            digitCounts[digit] = 0;
+            digitPositions[digit] = [];
+        }
+
+        for (let col = 0; col < 9; col++) {
+            if (sudokuGrid[row][col] === 0) {
+                candidates[row][col].forEach(digit => {
+                    if (!digitCounts[digit]) digitCounts[digit] = 0;
+                    if (!digitPositions[digit]) digitPositions[digit] = [];
+                    digitCounts[digit]++;
+                    digitPositions[digit].push([row, col]);
+                });
+            }
+        }
+
+        for (let digit = 1; digit <= 9; digit++) {
+            if (digitCounts[digit] === 1) {
+                return {
+                    row: digitPositions[digit][0][0],
+                    col: digitPositions[digit][0][1],
+                    digit: digit,
+                    unitType: 'cette ligne'
+                };
+            }
+        }
+    }
+
+    // Vérifier les colonnes
+    for (let col = 0; col < 9; col++) {
+        const digitCounts = {};
+        const digitPositions = {};
+
+        for (let digit = 1; digit <= 9; digit++) {
+            digitCounts[digit] = 0;
+            digitPositions[digit] = [];
+        }
+
+        for (let row = 0; row < 9; row++) {
+            if (sudokuGrid[row][col] === 0) {
+                candidates[row][col].forEach(digit => {
+                    if (!digitCounts[digit]) digitCounts[digit] = 0;
+                    if (!digitPositions[digit]) digitPositions[digit] = [];
+                    digitCounts[digit]++;
+                    digitPositions[digit].push([row, col]);
+                });
+            }
+        }
+
+        for (let digit = 1; digit <= 9; digit++) {
+            if (digitCounts[digit] === 1) {
+                return {
+                    row: digitPositions[digit][0][0],
+                    col: digitPositions[digit][0][1],
+                    digit: digit,
+                    unitType: 'cette colonne'
+                };
+            }
+        }
+    }
+
+    // Vérifier les blocs 3x3
+    for (let blockRow = 0; blockRow < 3; blockRow++) {
+        for (let blockCol = 0; blockCol < 3; blockCol++) {
+            const digitCounts = {};
+            const digitPositions = {};
+
+            for (let digit = 1; digit <= 9; digit++) {
+                digitCounts[digit] = 0;
+                digitPositions[digit] = [];
+            }
+
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const row = blockRow * 3 + r;
+                    const col = blockCol * 3 + c;
+                    if (sudokuGrid[row][col] === 0) {
+                        candidates[row][col].forEach(digit => {
+                            if (!digitCounts[digit]) digitCounts[digit] = 0;
+                            if (!digitPositions[digit]) digitPositions[digit] = [];
+                            digitCounts[digit]++;
+                            digitPositions[digit].push([row, col]);
+                        });
+                    }
+                }
+            }
+
+            for (let digit = 1; digit <= 9; digit++) {
+                if (digitCounts[digit] === 1) {
+                    return {
+                        row: digitPositions[digit][0][0],
+                        col: digitPositions[digit][0][1],
+                        digit: digit,
+                        unitType: 'ce bloc 3×3'
+                    };
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Trouver la dernière position d'un chiffre dans une unité
+function findLastDigitInUnit(candidates) {
+    // Fonction helper pour trouver les chiffres manquants et leur emplacement possible
+    function findMissingDigitInUnit(positions) {
+        const digitsPresent = new Set();
+        const digitToPosition = {};
+
+        positions.forEach(([row, col]) => {
+            if (sudokuGrid[row][col] !== 0) {
+                digitsPresent.add(sudokuGrid[row][col]);
+            } else {
+                candidates[row][col].forEach(digit => {
+                    if (!digitToPosition[digit]) digitToPosition[digit] = [];
+                    digitToPosition[digit].push([row, col]);
+                });
+            }
+        });
+
+        for (let digit = 1; digit <= 9; digit++) {
+            if (!digitsPresent.has(digit) && digitToPosition[digit] && digitToPosition[digit].length === 1) {
+                return {
+                    digit: digit,
+                    row: digitToPosition[digit][0][0],
+                    col: digitToPosition[digit][0][1]
+                };
+            }
+        }
+
+        return null;
+    }
+
+    // Vérifier les lignes
+    for (let row = 0; row < 9; row++) {
+        const positions = [];
+        for (let col = 0; col < 9; col++) {
+            positions.push([row, col]);
+        }
+
+        const result = findMissingDigitInUnit(positions);
+        if (result) {
+            return Object.assign(result, { unitType: `la ligne ${row + 1}` });
+        }
+    }
+
+    // Vérifier les colonnes
+    for (let col = 0; col < 9; col++) {
+        const positions = [];
+        for (let row = 0; row < 9; row++) {
+            positions.push([row, col]);
+        }
+
+        const result = findMissingDigitInUnit(positions);
+        if (result) {
+            return Object.assign(result, { unitType: `la colonne ${String.fromCharCode(65 + col)}` });
+        }
+    }
+
+    // Vérifier les blocs
+    for (let blockRow = 0; blockRow < 3; blockRow++) {
+        for (let blockCol = 0; blockCol < 3; blockCol++) {
+            const positions = [];
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    positions.push([blockRow * 3 + r, blockCol * 3 + c]);
+                }
+            }
+
+            const result = findMissingDigitInUnit(positions);
+            if (result) {
+                return Object.assign(result, { unitType: `le bloc 3×3 en position ${blockRow + 1},${blockCol + 1}` });
+            }
+        }
+    }
+
+    return null;
+}
+
+// Trouver une paire nue
+function findNakedPair(candidates) {
+    for (let row = 0; row < 9; row++) {
+        for (let col1 = 0; col1 < 9; col1++) {
+            if (sudokuGrid[row][col1] !== 0 || candidates[row][col1].length !== 2) continue;
+
+            for (let col2 = col1 + 1; col2 < 9; col2++) {
+                if (sudokuGrid[row][col2] !== 0 || candidates[row][col2].length !== 2) continue;
+
+                // Vérifier si les candidats sont identiques
+                if (JSON.stringify(candidates[row][col1].sort()) === JSON.stringify(candidates[row][col2].sort())) {
+                    // Paire nue trouvée
+                    return {
+                        cells: [[row, col1], [row, col2]],
+                        digits: candidates[row][col1].slice(),
+                        unitType: 'ligne'
+                    };
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Trouver un triplet nu
+function findNakedTriple(candidates) {
+    for (let row = 0; row < 9; row++) {
+        for (let col1 = 0; col1 < 9; col1++) {
+            if (sudokuGrid[row][col1] !== 0 || candidates[row][col1].length < 2 || candidates[row][col1].length > 3) continue;
+
+            for (let col2 = col1 + 1; col2 < 9; col2++) {
+                if (sudokuGrid[row][col2] !== 0 || candidates[row][col2].length < 2 || candidates[row][col2].length > 3) continue;
+
+                for (let col3 = col2 + 1; col3 < 9; col3++) {
+                    if (sudokuGrid[row][col3] !== 0 || candidates[row][col3].length < 2 || candidates[row][col3].length > 3) continue;
+
+                    // Combiner tous les candidats uniques
+                    const allCandidates = [...new Set([...candidates[row][col1], ...candidates[row][col2], ...candidates[row][col3]])];
+
+                    // Triplet nu si exactement 3 candidats différents
+                    if (allCandidates.length === 3) {
+                        return {
+                            cells: [[row, col1], [row, col2], [row, col3]],
+                            digits: allCandidates,
+                            unitType: 'ligne'
+                        };
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Trouver un triplet caché
+function findHiddenTriple(candidates) {
+    // Vérifier les lignes
+    for (let row = 0; row < 9; row++) {
+        const digitCounts = {};
+        const digitPositions = {};
+
+        for (let digit = 1; digit <= 9; digit++) {
+            digitCounts[digit] = 0;
+            digitPositions[digit] = [];
+        }
+
+        for (let col = 0; col < 9; col++) {
+            if (sudokuGrid[row][col] === 0) {
+                candidates[row][col].forEach(digit => {
+                    if (!digitCounts[digit]) digitCounts[digit] = 0;
+                    if (!digitPositions[digit]) digitPositions[digit] = [];
+                    digitCounts[digit]++;
+                    digitPositions[digit].push([row, col]);
+                });
+            }
+        }
+
+        // Trouver 3 chiffres qui n'apparaissent que dans 3 cellules exactement
+        const tripleCandidates = [];
+        for (let digit = 1; digit <= 9; digit++) {
+            if (digitCounts[digit] >= 2 && digitCounts[digit] <= 3) {
+                tripleCandidates.push(digit);
+            }
+        }
+
+        if (tripleCandidates.length < 3) continue;
+
+        // Tester toutes les combinaisons de 3 chiffres
+        for (let i = 0; i < tripleCandidates.length - 2; i++) {
+            for (let j = i + 1; j < tripleCandidates.length - 1; j++) {
+                for (let k = j + 1; k < tripleCandidates.length; k++) {
+                    const tripleDigits = [tripleCandidates[i], tripleCandidates[j], tripleCandidates[k]];
+                    const cellsWithTheseDigits = new Set();
+
+                    tripleDigits.forEach(digit => {
+                        digitPositions[digit].forEach(([r, c]) => {
+                            cellsWithTheseDigits.add(`${r},${c}`);
+                        });
+                    });
+
+                    const cellArray = Array.from(cellsWithTheseDigits);
+                    const uniqueCells = cellArray.map(cellStr => cellStr.split(',').map(Number));
+
+                    // Si ces 3 chiffres n'apparaissent que dans 3 cellules exactement
+                    if (uniqueCells.length === 3) {
+                        return {
+                            cells: uniqueCells,
+                            digits: tripleDigits,
+                            unitType: 'cette ligne'
+                        };
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Trouver un Y-Wing (technique avancée)
+function findYWing(candidates) {
+    // Un Y-Wing implique 3 cellules A, B, C où :
+    // - A (pivot) voit B et C
+    // - B et C ne se voient pas directement
+    // - A a 2 candidats [x,y]
+    // - B a 2 candidats [x,z] avec z ≠ y
+    // - C a 2 candidats [y,z] avec z ≠ x
+    // - Donc z peut être éliminé des cellules qui voient B ET C
+
+    for (let pivotRow = 0; pivotRow < 9; pivotRow++) {
+        for (let pivotCol = 0; pivotCol < 9; pivotCol++) {
+            if (sudokuGrid[pivotRow][pivotCol] !== 0 || candidates[pivotRow][pivotCol].length !== 2) continue;
+
+            const [x, y] = candidates[pivotRow][pivotCol];
+
+            // Chercher aile B
+            for (let wingBRow = 0; wingBRow < 9; wingBRow++) {
+                for (let wingBCol = 0; wingBCol < 9; wingBCol++) {
+                    if (sudokuGrid[wingBRow][wingBCol] !== 0 ||
+                        candidates[wingBRow][wingBCol].length !== 2 ||
+                        (!cellsSeeEachOther(pivotRow, pivotCol, wingBRow, wingBCol))) continue;
+
+                    const bCands = candidates[wingBRow][wingBCol];
+                    if (!((bCands.includes(x) && !bCands.includes(y)) || (bCands.includes(y) && !bCands.includes(x)))) continue;
+
+                    let z;
+                    if (bCands.includes(x) && !bCands.includes(y)) {
+                        z = bCands.find(c => c !== x);
+                    } else if (bCands.includes(y) && !bCands.includes(x)) {
+                        z = bCands.find(c => c !== y);
+                    } else {
+                        continue; // Ne devrait pas arriver
+                    }
+
+                    // Chercher aile C
+                    for (let wingCRow = 0; wingCRow < 9; wingCRow++) {
+                        for (let wingCCol = 0; wingCCol < 9; wingCCol++) {
+                            if (sudokuGrid[wingCRow][wingCCol] !== 0 ||
+                                candidates[wingCRow][wingCCol].length !== 2 ||
+                                (!cellsSeeEachOther(pivotRow, pivotCol, wingCRow, wingCCol)) ||
+                                cellsSeeEachOther(wingBRow, wingBCol, wingCRow, wingCCol)) continue;
+
+                            const cCands = candidates[wingCRow][wingCCol];
+                            let zC;
+                            if (bCands.includes(x) && !bCands.includes(y)) {
+                                // B a [x,z], donc C doit avoir [y,something]
+                                if (!cCands.includes(y) || cCands.includes(x)) continue;
+                                zC = cCands.find(c => c !== y);
+                            } else {
+                                // B a [y,z], donc C doit avoir [x,something]
+                                if (!cCands.includes(x) || cCands.includes(y)) continue;
+                                zC = cCands.find(c => c !== x);
+                            }
+
+                            if (zC !== z) continue; // Les z doivent matcher
+
+                            // Trouver des cellules qui voient B ET C
+                            const eliminationCells = findCellsSeeingBoth(wingBRow, wingBCol, wingCRow, wingCCol, z);
+
+                            if (eliminationCells.length > 0) {
+                                const [elimRow, elimCol] = eliminationCells[0]; // Prendre la première
+                                return {
+                                    cells: [[pivotRow, pivotCol], [wingBRow, wingBCol], [wingCRow, wingCCol]],
+                                    digitToEliminate: z,
+                                    eliminationCell: [elimRow, elimCol]
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Vérifier si deux cellules se voient (ligne, colonne ou bloc commun)
+function cellsSeeEachOther(r1, c1, r2, c2) {
+    if (r1 === r2 && c1 === c2) return false; // Même cellule
+    return r1 === r2 || c1 === c2 || (Math.floor(r1/3) === Math.floor(r2/3) && Math.floor(c1/3) === Math.floor(c2/3));
+}
+
+// Trouver les cellules qui voient les deux ailes d'un Y-Wing et contiennent le chiffre z
+function findCellsSeeingBoth(bRow, bCol, cRow, cCol, z) {
+    const cells = [];
+
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            if (sudokuGrid[row][col] !== 0) continue;
+
+            // Vérifier que la cellule voit B et C
+            const seesB = cellsSeeEachOther(row, col, bRow, bCol);
+            const seesC = cellsSeeEachOther(row, col, cRow, cCol);
+
+            if (seesB && seesC && candidates[row][col].includes(z)) {
+                cells.push([row, col]);
+            }
+        }
+    }
+
+    return cells;
+}
+
+// Trouver un X-Wing (technique avancée - Fish 2x2)
+function findXWing(candidates) {
+    // X-Wing: 2 lignes et 2 colonnes où un candidat n'apparaît que dans les 4 intersections
+
+    for (let digit = 1; digit <= 9; digit++) {
+        // Chercher les lignes où le candidat apparaît exactement 2 fois
+        const rowsWithTwoOccurrences = [];
+        for (let row = 0; row < 9; row++) {
+            let count = 0;
+            const positions = [];
+            for (let col = 0; col < 9; col++) {
+                if (sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                    count++;
+                    positions.push(col);
+                }
+            }
+            if (count === 2) {
+                rowsWithTwoOccurrences.push({ row: row, cols: positions });
+            }
+        }
+
+        if (rowsWithTwoOccurrences.length >= 2) {
+            // Tester toutes les paires de lignes possibles
+            for (let i = 0; i < rowsWithTwoOccurrences.length; i++) {
+                for (let j = i + 1; j < rowsWithTwoOccurrences.length; j++) {
+                    const row1 = rowsWithTwoOccurrences[i];
+                    const row2 = rowsWithTwoOccurrences[j];
+
+                    // Les colonnes doivent être identiques (rectangle)
+                    if (JSON.stringify(row1.cols.sort()) !== JSON.stringify(row2.cols.sort())) continue;
+
+                    const [col1, col2] = row1.cols.sort();
+                    const xwingRows = [row1.row, row2.row];
+
+                    // Vérifier que c'est effectivement un X-Wing (uniquement ces 4 apparitions)
+                    let totalOccurrences = 0;
+                    for (let r = 0; r < 9; r++) {
+                        for (let c = 0; c < 9; c++) {
+                            if (sudokuGrid[r][c] === 0 && candidates[r][c].includes(digit)) {
+                                totalOccurrences++;
+                            }
+                        }
+                    }
+
+                    // Le X-Wing doit être valide si il apparait exactement 4 fois
+                    if (totalOccurrences !== 4) continue;
+
+                    // X-Wing trouvé ! Rechercher les éliminations possibles
+                    const eliminationCells = findXWingEliminations(candidates, digit, xwingRows, [col1, col2]);
+
+                    if (eliminationCells.length > 0) {
+                        const xwingCells = [[xwingRows[0], col1], [xwingRows[0], col2],
+                                          [xwingRows[1], col1], [xwingRows[1], col2]];
+                        return {
+                            digit: digit,
+                            cells: xwingCells,
+                            type: 'ligne',
+                            eliminationCell: eliminationCells[0]
+                        };
+                    }
+                }
+            }
+        }
+
+        // Même logique pour les colonnes (chercher les X-Wing basés sur colonnes)
+        const colsWithTwoOccurrences = [];
+        for (let col = 0; col < 9; col++) {
+            let count = 0;
+            const positions = [];
+            for (let row = 0; row < 9; row++) {
+                if (sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                    count++;
+                    positions.push(row);
+                }
+            }
+            if (count === 2) {
+                colsWithTwoOccurrences.push({ col: col, rows: positions });
+            }
+        }
+
+        if (colsWithTwoOccurrences.length >= 2) {
+            // Tester toutes las paires de colonnes
+            for (let i = 0; i < colsWithTwoOccurrences.length; i++) {
+                for (let j = i + 1; j < colsWithTwoOccurrences.length; j++) {
+                    const col1 = colsWithTwoOccurrences[i];
+                    const col2 = colsWithTwoOccurrences[j];
+
+                    if (JSON.stringify(col1.rows.sort()) !== JSON.stringify(col2.rows.sort())) continue;
+
+                    const [row1, row2] = col1.rows.sort();
+                    const xwingCols = [col1.col, col2.col];
+
+                    // Vérifier total apparitions = 4
+                    let totalOccurrences = 0;
+                    for (let r = 0; r < 9; r++) {
+                        for (let c = 0; c < 9; c++) {
+                            if (sudokuGrid[r][c] === 0 && candidates[r][c].includes(digit)) {
+                                totalOccurrences++;
+                            }
+                        }
+                    }
+
+                    if (totalOccurrences !== 4) continue;
+
+                    const eliminationCells = findXWingEliminations(candidates, digit, [row1, row2], xwingCols);
+
+                    if (eliminationCells.length > 0) {
+                        const xwingCells = [[row1, xwingCols[0]], [row1, xwingCols[1]],
+                                          [row2, xwingCols[0]], [row2, xwingCols[1]]];
+                        return {
+                            digit: digit,
+                            cells: xwingCells,
+                            type: 'colonne',
+                            eliminationCell: eliminationCells[0]
+                        };
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Trouver les cellules où un candidat peut être éliminé dans un X-Wing
+function findXWingEliminations(candidates, digit, rows, cols) {
+    const eliminationCells = [];
+
+    // Éliminer le candidat des autres cellules des mêmes lignes
+    for (const row of rows) {
+        for (let col = 0; col < 9; col++) {
+            if (!cols.includes(col) && sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                eliminationCells.push([row, col]);
+            }
+        }
+    }
+
+    // Éliminer le candidat des autres cellules des mêmes colonnes
+    for (const col of cols) {
+        for (let row = 0; row < 9; row++) {
+            if (!rows.includes(row) && sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                eliminationCells.push([row, col]);
+            }
+        }
+    }
+
+    return eliminationCells;
+}
+
+// Trouver un Swordfish (technique avancée - Fish 3x3)
+function findSwordfish(candidates) {
+    // Swordfish: extension du X-Wing à 3 lignes/colonnes
+    // Pour chaque candidat, chercher 3 unités qui satisfont les contraintes du fish
+
+    for (let digit = 1; digit <= 9; digit++) {
+        // Chercher les lignes avec 2-3 apparitions du candidat
+        const candidateRows = [];
+        for (let row = 0; row < 9; row++) {
+            let count = 0;
+            const positions = [];
+            for (let col = 0; col < 9; col++) {
+                if (sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                    count++;
+                    positions.push(col);
+                }
+            }
+            if (count >= 2 && count <= 3) {
+                candidateRows.push({ row: row, count: count, positions: positions });
+            }
+        }
+
+        if (candidateRows.length >= 3) {
+            // Tester tous les triplets de lignes possibles
+            for (let i = 0; i < candidateRows.length - 2; i++) {
+                for (let j = i + 1; j < candidateRows.length - 1; j++) {
+                    for (let k = j + 1; k < candidateRows.length; k++) {
+                        const selectedRows = [candidateRows[i], candidateRows[j], candidateRows[k]];
+
+                        // Combiner toutes les colonnes uniques apparaissant dans ces 3 lignes
+                        const allCols = new Set();
+                        selectedRows.forEach(sr => sr.positions.forEach(col => allCols.add(col)));
+
+                        // Pour un swordfish valide, il doit y avoir exactement 3 colonnes
+                        if (allCols.size === 3) {
+                            const swordfishCols = Array.from(allCols).sort();
+
+                            // Vérifier que chaque ligne contient le candidat dans au plus 3 colonnes
+                            // et qu'il n'apparaît ailleurs que dans ces colonnes pour ces lignes
+                            let isValidSwordfish = true;
+                            const swordfishRows = selectedRows.map(sr => sr.row);
+
+                            // Vérifier les contraintes: maximum 3 apparitions parligne
+                            for (const sr of selectedRows) {
+                                if (sr.count > 3) {
+                                    isValidSwordfish = false;
+                                    break;
+                                }
+                            }
+
+                            if (!isValidSwordfish) continue;
+
+                            // Chercher les éliminations possibles
+                            const eliminationCells = findSwordfishEliminations(candidates, digit, swordfishRows, swordfishCols);
+
+                            if (eliminationCells.length > 0) {
+                                // Construire la liste des cellules du swordfish (toutes les intersections)
+                                const swordfishCells = [];
+                                for (const row of swordfishRows) {
+                                    for (const col of swordfishCols) {
+                                        if (candidates[row][col].includes(digit)) {
+                                            swordfishCells.push([row, col]);
+                                        }
+                                    }
+                                }
+
+                                return {
+                                    digit: digit,
+                                    cells: swordfishCells,
+                                    type: 'ligne',
+                                    eliminationCell: eliminationCells[0]
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Même logique pour les colonnes
+        const candidateCols = [];
+        for (let col = 0; col < 9; col++) {
+            let count = 0;
+            const positions = [];
+            for (let row = 0; row < 9; row++) {
+                if (sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                    count++;
+                    positions.push(row);
+                }
+            }
+            if (count >= 2 && count <= 3) {
+                candidateCols.push({ col: col, count: count, positions: positions });
+            }
+        }
+
+        if (candidateCols.length >= 3) {
+            for (let i = 0; i < candidateCols.length - 2; i++) {
+                for (let j = i + 1; j < candidateCols.length - 1; j++) {
+                    for (let k = j + 1; k < candidateCols.length; k++) {
+                        const selectedCols = [candidateCols[i], candidateCols[j], candidateCols[k]];
+
+                        const allRows = new Set();
+                        selectedCols.forEach(sc => sc.positions.forEach(row => allRows.add(row)));
+
+                        if (allRows.size === 3) {
+                            const swordfishRows = Array.from(allRows).sort();
+
+                            let isValidSwordfish = true;
+                            for (const sc of selectedCols) {
+                                if (sc.count > 3) {
+                                    isValidSwordfish = false;
+                                    break;
+                                }
+                            }
+
+                            if (!isValidSwordfish) continue;
+
+                            const eliminationCells = findSwordfishEliminations(candidates, digit, swordfishRows, selectedCols.map(sc => sc.col));
+
+                            if (eliminationCells.length > 0) {
+                                const swordfishCells = [];
+                                for (const row of swordfishRows) {
+                                    for (const colIdx in selectedCols.map(sc => sc.col)) {
+                                        const col = selectedCols[colIdx].col;
+                                        if (candidates[row][col].includes(digit)) {
+                                            swordfishCells.push([row, col]);
+                                        }
+                                    }
+                                }
+
+                                return {
+                                    digit: digit,
+                                    cells: swordfishCells,
+                                    type: 'colonne',
+                                    eliminationCell: eliminationCells[0]
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Trouver les cellules où un candidat peut être éliminé dans un Swordfish
+function findSwordfishEliminations(candidates, digit, rows, cols) {
+    const eliminationCells = [];
+
+    // Éliminer le candidat des autres cellules des mêmes lignes (pas dans les colonnes du swordfish)
+    for (const row of rows) {
+        for (let col = 0; col < 9; col++) {
+            if (!cols.includes(col) && sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                eliminationCells.push([row, col]);
+            }
+        }
+    }
+
+    // Éliminer le candidat des autres cellules des mêmes colonnes (pas dans les lignes du swordfish)
+    for (const col of cols) {
+        for (let row = 0; row < 9; row++) {
+            if (!rows.includes(row) && sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                eliminationCells.push([row, col]);
+            }
+        }
+    }
+
+    return eliminationCells;
+}
+
+// Trouver un Jellyfish (technique ultime - Fish 4x4)
+function findJellyfish(candidates) {
+    // Jellyfish: extension du Swordfish à 4 lignes/colonnes
+    // Même logique que Swordfish mais avec 4 unités au lieu de 3
+
+    for (let digit = 1; digit <= 9; digit++) {
+        // Chercher les lignes avec 2-4 apparitions du candidat
+        const candidateRows = [];
+        for (let row = 0; row < 9; row++) {
+            let count = 0;
+            const positions = [];
+            for (let col = 0; col < 9; col++) {
+                if (sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                    count++;
+                    positions.push(col);
+                }
+            }
+            if (count >= 2 && count <= 4) {
+                candidateRows.push({ row: row, count: count, positions: positions });
+            }
+        }
+
+        if (candidateRows.length >= 4) {
+            // Tester tous les quadruplets de lignes possibles
+            for (let i = 0; i < candidateRows.length - 3; i++) {
+                for (let j = i + 1; j < candidateRows.length - 2; j++) {
+                    for (let k = j + 1; k < candidateRows.length - 1; k++) {
+                        for (let l = k + 1; l < candidateRows.length; l++) {
+                            const selectedRows = [candidateRows[i], candidateRows[j], candidateRows[k], candidateRows[l]];
+
+                            // Combiner toutes les colonnes uniques apparaissant dans ces 4 lignes
+                            const allCols = new Set();
+                            selectedRows.forEach(sr => sr.positions.forEach(col => allCols.add(col)));
+
+                            // Pour un jellyfish valide, il doit y avoir exactement 4 colonnes
+                            if (allCols.size === 4) {
+                                const jellyfishCols = Array.from(allCols).sort();
+
+                                let isValidJellyfish = true;
+                                const jellyfishRows = selectedRows.map(sr => sr.row);
+
+                                // Vérifier les contraintes: maximum 4 apparitions par ligne
+                                for (const sr of selectedRows) {
+                                    if (sr.count > 4) {
+                                        isValidJellyfish = false;
+                                        break;
+                                    }
+                                }
+
+                                if (!isValidJellyfish) continue;
+
+                                // Chercher les éliminations possibles
+                                const eliminationCells = findJellyfishEliminations(candidates, digit, jellyfishRows, jellyfishCols);
+
+                                if (eliminationCells.length > 0) {
+                                    // Construire la liste des cellules du jellyfish (toutes les intersections)
+                                    const jellyfishCells = [];
+                                    for (const row of jellyfishRows) {
+                                        for (const col of jellyfishCols) {
+                                            if (candidates[row][col].includes(digit)) {
+                                                jellyfishCells.push([row, col]);
+                                            }
+                                        }
+                                    }
+
+                                    return {
+                                        digit: digit,
+                                        cells: jellyfishCells,
+                                        type: 'ligne',
+                                        eliminationCell: eliminationCells[0]
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Même logique pour les colonnes
+        const candidateCols = [];
+        for (let col = 0; col < 9; col++) {
+            let count = 0;
+            const positions = [];
+            for (let row = 0; row < 9; row++) {
+                if (sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                    count++;
+                    positions.push(row);
+                }
+            }
+            if (count >= 2 && count <= 4) {
+                candidateCols.push({ col: col, count: count, positions: positions });
+            }
+        }
+
+        if (candidateCols.length >= 4) {
+            for (let i = 0; i < candidateCols.length - 3; i++) {
+                for (let j = i + 1; j < candidateCols.length - 2; j++) {
+                    for (let k = j + 1; k < candidateCols.length - 1; k++) {
+                        for (let l = k + 1; l < candidateCols.length; l++) {
+                            const selectedCols = [candidateCols[i], candidateCols[j], candidateCols[k], candidateCols[l]];
+
+                            const allRows = new Set();
+                            selectedCols.forEach(sc => sc.positions.forEach(row => allRows.add(row)));
+
+                            if (allRows.size === 4) {
+                                const jellyfishRows = Array.from(allRows).sort();
+
+                                let isValidJellyfish = true;
+                                for (const sc of selectedCols) {
+                                    if (sc.count > 4) {
+                                        isValidJellyfish = false;
+                                        break;
+                                    }
+                                }
+
+                                if (!isValidJellyfish) continue;
+
+                                const eliminationCells = findJellyfishEliminations(candidates, digit, jellyfishRows, selectedCols.map(sc => sc.col));
+
+                                if (eliminationCells.length > 0) {
+                                    const jellyfishCells = [];
+                                    for (const row of jellyfishRows) {
+                                        for (const colIdx in selectedCols.map(sc => sc.col)) {
+                                            const col = selectedCols[colIdx].col;
+                                            if (candidates[row][col].includes(digit)) {
+                                                jellyfishCells.push([row, col]);
+                                            }
+                                        }
+                                    }
+
+                                    return {
+                                        digit: digit,
+                                        cells: jellyfishCells,
+                                        type: 'colonne',
+                                        eliminationCell: eliminationCells[0]
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Trouver les cellules où un candidat peut être éliminé dans un Jellyfish
+function findJellyfishEliminations(candidates, digit, rows, cols) {
+    const eliminationCells = [];
+
+    // Éliminer le candidat des autres cellules des mêmes lignes (pas dans les colonnes du jellyfish)
+    for (const row of rows) {
+        for (let col = 0; col < 9; col++) {
+            if (!cols.includes(col) && sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                eliminationCells.push([row, col]);
+            }
+        }
+    }
+
+    // Éliminer le candidat des autres cellules des mêmes colonnes (pas dans les lignes du jellyfish)
+    for (const col of cols) {
+        for (let row = 0; row < 9; row++) {
+            if (!rows.includes(row) && sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                eliminationCells.push([row, col]);
+            }
+        }
+    }
+
+    return eliminationCells;
+}
+
+// Fonction utility pour obtenir la notation d'une cellule (A1, B2, etc.)
+function getCellNotation(row, col) {
+    const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+    return `${rowLetters[row]}${col + 1}`;
+}
+
+// Ajouter le style CSS pour l'indice
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .hint-highlight {
+            background-color: #fff59d !important;
+            animation: hint-pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes hint-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+    `;
+    document.head.appendChild(style);
+});

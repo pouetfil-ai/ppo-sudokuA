@@ -186,6 +186,65 @@ button:hover, select:hover {
     margin: 0 auto;
 }
 
+.hint-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.hint-btn {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.hint-btn:hover {
+    background-color: #1976D2;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+.hint-btn:active {
+    transform: translateY(0);
+}
+
+.hint-message {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 15px 20px;
+    max-width: 450px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 2px solid #2196F3;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: all 0.3s ease;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.hint-message.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.hint-message strong {
+    color: #2196F3;
+}
+
 .sudoku-board {
     display: grid;
     grid-template-columns: repeat(9, 50px);
