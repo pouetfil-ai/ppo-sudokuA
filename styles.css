@@ -146,6 +146,22 @@ h1 {
     background-color: #1976D2;
 }
 
+#red-hint.active {
+    background-color: #ff6666;
+}
+
+#red-hint.active:hover {
+    background-color: #ff4d4d;
+}
+
+#highlight-hint.active {
+    background-color: #ffeb3b;
+}
+
+#highlight-hint.active:hover {
+    background-color: #fdd835;
+}
+
 button, select {
     padding: 4px 12px;
     font-size: 12px;
@@ -285,6 +301,12 @@ button:hover, select:hover {
 
 .hint-highlighted {
     background-color: yellow;
+    color: black;
+    font-weight: bold;
+}
+
+.hint-red {
+    background-color: #ff9999;
     color: black;
     font-weight: bold;
 }

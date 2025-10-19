@@ -11,6 +11,8 @@ let maskedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array
 let maskMode = false; // Mode pour masquer un candidat
 let highlightedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat marqué en jaune
 let highlightMode = false; // Mode pour marquer un candidat
+let redMarkedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat marqué en rouge
+let redMode = false; // Mode pour marquer un candidat en rouge
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
@@ -121,6 +123,14 @@ function setupEventListeners() {
     addTouchAndClick('highlight-hint', () => {
         highlightMode = !highlightMode;
         if (highlightMode) maskMode = false;
+        if (highlightMode) redMode = false;
+        updateCandidateBtnStates();
+        if (selectedCell) selectedCell.focus();
+    });
+    addTouchAndClick('red-hint', () => {
+        redMode = !redMode;
+        if (redMode) maskMode = false;
+        if (redMode) highlightMode = false;
         updateCandidateBtnStates();
         if (selectedCell) selectedCell.focus();
     });
@@ -158,7 +168,8 @@ function newGame() {
     const initialState = {
         grid: JSON.parse(JSON.stringify(sudokuGrid)),
         maskedCandidates: JSON.parse(JSON.stringify(maskedCandidates)),
-        highlightedCandidates: JSON.parse(JSON.stringify(highlightedCandidates))
+        highlightedCandidates: JSON.parse(JSON.stringify(highlightedCandidates)),
+        redMarkedCandidates: JSON.parse(JSON.stringify(redMarkedCandidates))
     };
     history = [initialState];
     historyIndex = 0;
@@ -167,6 +178,8 @@ function newGame() {
     highlightMode = false;
     highlightedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false)));
     maskMode = false;
+    redMode = false;
+    redMarkedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false)));
     // Réinitialiser les indicateurs actifs
     updateCandidateBtnStates();
 }
@@ -434,10 +447,15 @@ function showHints(cell, row, col) {
         }
     }
 
-    // Créer les divs avec fond jaune si marqués
+    // Créer les divs avec fond couleur si marqués
     const hintDivs = hints.map((num, index) => {
         const numValue = index + 1;
-        const className = highlightedCandidates[row][col][numValue] ? 'hint-highlighted' : '';
+        let className = '';
+        if (highlightedCandidates[row][col][numValue]) {
+            className = 'hint-highlighted';
+        } else if (redMarkedCandidates[row][col][numValue]) {
+            className = 'hint-red';
+        }
         return `<div class="${className}">${num || ''}</div>`;
     });
 
@@ -478,6 +496,16 @@ function handleKeyPress(event) {
             updateBoard();
             updateCandidateBtnStates();
             addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+            clearMessage();
+        }
+    } else if (redMode && key >= '1' && key <= '9') {
+        // (Dé)marquer un candidat en rouge
+        const num = parseInt(key);
+        if (isValidMove(row, col, num)) {
+            redMarkedCandidates[row][col][num] = !redMarkedCandidates[row][col][num];
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates, redMarkedCandidates);
             clearMessage();
         }
     } else if (maskMode && key >= '1' && key <= '9') {
@@ -543,6 +571,7 @@ function updateHintsIndicator() {
 function updateCandidateBtnStates() {
     const maskBtn = document.getElementById('mask-hint');
     const highlightBtn = document.getElementById('highlight-hint');
+    const redBtn = document.getElementById('red-hint');
     if (maskMode) {
         maskBtn.classList.add('active');
     } else {
@@ -552,6 +581,11 @@ function updateCandidateBtnStates() {
         highlightBtn.classList.add('active');
     } else {
         highlightBtn.classList.remove('active');
+    }
+    if (redMode) {
+        redBtn.classList.add('active');
+    } else {
+        redBtn.classList.remove('active');
     }
 }
 
@@ -632,14 +666,15 @@ function showMessage(text, type) {
 }
 
 // Ajouter à l'historique
-function addToHistory(grid, masked = null, highlighted = null) {
+function addToHistory(grid, masked = null, highlighted = null, red = null) {
     // Supprimer tout ce qui vient après l'index actuel
     history = history.slice(0, historyIndex + 1);
     // Ajouter le nouvel état (grille et candidats masqués)
     const state = {
         grid: JSON.parse(JSON.stringify(grid)),
         maskedCandidates: masked ? JSON.parse(JSON.stringify(masked)) : JSON.parse(JSON.stringify(maskedCandidates)),
-        highlightedCandidates: highlighted ? JSON.parse(JSON.stringify(highlighted)) : JSON.parse(JSON.stringify(highlightedCandidates))
+        highlightedCandidates: highlighted ? JSON.parse(JSON.stringify(highlighted)) : JSON.parse(JSON.stringify(highlightedCandidates)),
+        redMarkedCandidates: red ? JSON.parse(JSON.stringify(red)) : JSON.parse(JSON.stringify(redMarkedCandidates))
     };
     history.push(state);
     historyIndex = history.length - 1;
@@ -653,6 +688,7 @@ function undo() {
         sudokuGrid = JSON.parse(JSON.stringify(prevState.grid));
         maskedCandidates = JSON.parse(JSON.stringify(prevState.maskedCandidates));
         highlightedCandidates = JSON.parse(JSON.stringify(prevState.highlightedCandidates));
+        redMarkedCandidates = JSON.parse(JSON.stringify(prevState.redMarkedCandidates));
         updateBoard();
         clearMessage();
     }
@@ -666,6 +702,7 @@ function redo() {
         sudokuGrid = JSON.parse(JSON.stringify(nextState.grid));
         maskedCandidates = JSON.parse(JSON.stringify(nextState.maskedCandidates));
         highlightedCandidates = JSON.parse(JSON.stringify(nextState.highlightedCandidates));
+        redMarkedCandidates = JSON.parse(JSON.stringify(nextState.redMarkedCandidates));
         updateBoard();
         clearMessage();
     }
@@ -724,6 +761,13 @@ function onNumberPadClick(num) {
         updateBoard();
         updateCandidateBtnStates();
         addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+        clearMessage();
+    } else if (redMode && isValidMove(row, col, num)) {
+        // (Dé)marquer un candidat en rouge avec les boutons du pad
+        redMarkedCandidates[row][col][num] = !redMarkedCandidates[row][col][num];
+        updateBoard();
+        updateCandidateBtnStates();
+        addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates, redMarkedCandidates);
         clearMessage();
     } else if (maskMode && isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
         // Masquer un candidat en mode crayon
