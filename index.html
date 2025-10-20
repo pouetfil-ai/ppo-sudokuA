@@ -26,6 +26,7 @@
                 </select>
             </div>
             <button id="start-game" class="start-btn">Commencer la Partie</button>
+            <button id="my-grids-btn" class="custom-btn">📁 Mes Grilles</button>
             <button id="create-custom" class="custom-btn">Créer Grille Personnalisée</button>
         </div>
         <div id="game-container" class="game-container hidden">
@@ -45,6 +46,7 @@
                     <option value="medium" selected>Moyen</option>
                     <option value="hard">Difficile</option>
                 </select>
+                <button id="save-grid-btn" class="save-btn hidden">💾 Sauvegarder</button>
                 <button id="start-custom-game" class="custom-start-btn hidden">Démarrer le Jeu</button>
             </div>
                 <div class="game-layout">
@@ -60,6 +62,21 @@
                     <div id="hint-message" class="hint-message"></div>
                 </div>
             <div id="message" class="message"></div>
+        </div>
+
+        <!-- Écran de gestion des grilles sauvegardées -->
+        <div id="saved-grids-screen" class="saved-grids-screen hidden">
+            <h2>Mes Grilles Sauvegardées</h2>
+            <div id="saved-grids-list" class="saved-grids-list">
+                <!-- Les grilles seront ajoutées ici en JavaScript -->
+            </div>
+            <div class="saved-grids-actions">
+                <button id="back-to-menu-btn" class="back-btn">⬅️ Retour au Menu</button>
+            </div>
+            <div id="saved-grids-empty" class="saved-grids-empty">
+                <p>Vous n'avez encore aucune grille sauvegardée.</p>
+                <p>Créez une grille personnalisée et sauvegardez-la !</p>
+            </div>
         </div>
     </div>
     <div class="team-credits">by PouetPhil Team</div>

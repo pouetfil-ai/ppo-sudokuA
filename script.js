@@ -7,6 +7,8 @@ let selectedCell = null;
 let selectedValue = 0;
 let history = [];
 let historyIndex = -1;
+const SAVED_GRIDS_KEY = 'sudoku_saved_grids';
+let savedGrids = [];
 let maskedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat masqué
 let maskMode = false; // Mode pour masquer un candidat
 let highlightedCandidates = Array(9).fill().map(() => Array(9).fill().map(() => Array(10).fill(false))); // index 1-9: true si candidat marqué en jaune
@@ -117,6 +119,9 @@ function setupEventListeners() {
     addTouchAndClick('redo', redo);
     addTouchAndClick('clear-grid', clearGrid);
     addTouchAndClick('hints-indicator', toggleHints);
+    addTouchAndClick('save-grid-btn', showSaveDialog);
+    addTouchAndClick('my-grids-btn', showSavedGrids);
+    addTouchAndClick('back-to-menu-btn', showMenu);
     addTouchAndClick('mask-hint', () => {
         maskMode = !maskMode;
         if (maskMode) highlightMode = false;
@@ -201,6 +206,7 @@ function initializeCustomGrid() {
     // Mettre à jour l'affichage
     updateBoard();
     updateHintsIndicator();
+    updateControlButtonsVisibility();
     clearMessage();
 
     // Afficher le bouton "Démarrer le Jeu"
@@ -2069,6 +2075,324 @@ function findJellyfishEliminations(candidates, digit, rows, cols) {
 function getCellNotation(row, col) {
     const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
     return `${rowLetters[row]}${col + 1}`;
+}
+
+// ===== GESTION DES GRILLES SAUVEGARDÉES =====
+
+// Charger les grilles sauvegardées depuis localStorage
+function loadSavedGrids() {
+    try {
+        const saved = localStorage.getItem(SAVED_GRIDS_KEY);
+        savedGrids = saved ? JSON.parse(saved) : [];
+        // Trier par date de création décroissante (plus récent en premier)
+        savedGrids.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return savedGrids;
+    } catch (error) {
+        console.error('Erreur lors du chargement des grilles:', error);
+        savedGrids = [];
+        return [];
+    }
+}
+
+// Sauvegarder une grille dans localStorage
+function saveGridToStorage(gridName, grid, solution, initialCellsCount) {
+    // Calculer une difficulté estimée basée sur le nombre initial de cellules remplies
+    let difficulty = 'Faible';
+    const filledPercentage = (initialCellsCount / 81) * 100;
+    if (filledPercentage < 35) difficulty = 'Élevée';
+    else if (filledPercentage < 50) difficulty = 'Moyenne';
+
+    const gridData = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        name: gridName,
+        createdAt: new Date().toISOString(),
+        grid: JSON.parse(JSON.stringify(grid)),
+        solution: JSON.parse(JSON.stringify(solution)),
+        initialCells: initialCellsCount,
+        difficulty: difficulty
+    };
+
+    // Charger les grilles existantes
+    loadSavedGrids();
+
+    // Vérifier la limite (10 grilles maximum)
+    if (savedGrids.length >= 10) {
+        // Supprimer la plus ancienne
+        savedGrids.shift();
+    }
+
+    // Ajouter la nouvelle grille
+    savedGrids.push(gridData);
+
+    // Sauvegarder dans localStorage
+    try {
+        localStorage.setItem(SAVED_GRIDS_KEY, JSON.stringify(savedGrids));
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde:', error);
+        showMessage('Erreur lors de la sauvegarde de la grille.', 'error');
+        return false;
+    }
+}
+
+// Charger une grille sauvegardée
+function loadGridFromStorage(gridId) {
+    loadSavedGrids();
+    const gridData = savedGrids.find(grid => grid.id === gridId);
+    return gridData || null;
+}
+
+// Supprimer une grille sauvegardée
+function deleteSavedGrid(gridId) {
+    loadSavedGrids();
+    savedGrids = savedGrids.filter(grid => grid.id !== gridId);
+
+    try {
+        localStorage.setItem(SAVED_GRIDS_KEY, JSON.stringify(savedGrids));
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        return false;
+    }
+}
+
+// Calculer le nombre de cellules remplies dans une grille
+function countFilledCells(grid) {
+    let count = 0;
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            if (grid[row][col] !== 0) count++;
+        }
+    }
+    return count;
+}
+
+// ===== INTERFACE UTILISATEUR POUR LES GRILLES SAUVEGARDÉES =====
+
+// Afficher la boîte de dialogue de sauvegarde
+function showSaveDialog() {
+    // Vérifier que la grille n'est pas vide
+    const filledCells = countFilledCells(sudokuGrid);
+    if (filledCells === 0) {
+        showMessage('Vous ne pouvez pas sauvegarder une grille vide.', 'error');
+        return;
+    }
+
+    // Créer la boîte de dialogue
+    const dialog = document.createElement('div');
+    dialog.className = 'save-dialog-overlay';
+    dialog.innerHTML = `
+        <div class="save-dialog">
+            <h3>💾 Sauvegarder la Grille</h3>
+            <input type="text" placeholder="Nom de votre grille" maxlength="50" id="grid-name-input">
+            <div class="save-dialog-actions">
+                <button class="save-dialog-cancel">Annuler</button>
+                <button class="save-dialog-confirm">Sauvegarder</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    // Focus sur le champ input
+    const inputField = document.getElementById('grid-name-input');
+    inputField.focus();
+
+    // Suggérer un nom par défaut
+    const now = new Date();
+    const defaultName = `Grille ${('0' + now.getDate()).slice(-2)}/${('0' + (now.getMonth() + 1)).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}`;
+    inputField.value = defaultName;
+
+    // Gestionnaires d'événements
+    document.querySelector('.save-dialog-cancel').addEventListener('click', () => {
+        document.body.removeChild(dialog);
+    });
+
+    document.querySelector('.save-dialog-confirm').addEventListener('click', () => {
+        const gridName = inputField.value.trim();
+        if (!gridName) {
+            alert('Veuillez donner un nom à votre grille.');
+            return;
+        }
+
+        // Sauvegarder la grille avec sa solution complète
+        const success = saveGridToStorage(gridName, sudokuGrid, solutionGrid, filledCells);
+
+        if (success) {
+            showMessage(`Grille "${gridName}" sauvegardée avec succès !`, 'success');
+            document.body.removeChild(dialog);
+        }
+    });
+
+    // Fermer avec Échap
+    document.addEventListener('keydown', function closeDialog(e) {
+        if (e.key === 'Escape') {
+            document.body.removeChild(dialog);
+            document.removeEventListener('keydown', closeDialog);
+        }
+    });
+
+    // Fermer en cliquant sur l'overlay
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            document.body.removeChild(dialog);
+        }
+    });
+}
+
+// Afficher l'écran des grilles sauvegardées
+function showSavedGrids() {
+    // Masquer le menu et afficher l'écran des grilles
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('saved-grids-screen').classList.remove('hidden');
+
+    // Charger et afficher les grilles
+    renderSavedGrids();
+}
+
+// Masquer l'écran des grilles sauvegardées (retour au menu)
+function hideSavedGridsScreen() {
+    document.getElementById('saved-grids-screen').classList.add('hidden');
+    document.getElementById('menu').classList.remove('hidden');
+}
+
+// Afficher les grilles sauvegardées
+function renderSavedGrids() {
+    const container = document.getElementById('saved-grids-list');
+    const emptyMessage = document.getElementById('saved-grids-empty');
+
+    const grids = loadSavedGrids();
+
+    if (grids.length === 0) {
+        container.innerHTML = '';
+        emptyMessage.style.display = 'block';
+        return;
+    }
+
+    emptyMessage.style.display = 'none';
+
+    // Générer le HTML pour chaque grille
+    container.innerHTML = grids.map(grid => `
+        <div class="saved-grid-item" data-id="${grid.id}">
+            <div class="saved-grid-name">${grid.name}</div>
+            <div class="saved-grid-info">
+                ${grid.initialCells} cellules remplies sur 81
+            </div>
+            <div class="saved-grid-meta">
+                <span class="saved-grid-difficulty ${grid.difficulty.toLowerCase()}">${grid.difficulty}</span>
+                <span class="saved-grid-date">${formatDate(grid.createdAt)}</span>
+            </div>
+            <div class="saved-grid-actions">
+                <button class="saved-grid-load-btn" onclick="loadAndPlayGrid('${grid.id}')">Charger</button>
+                <button class="saved-grid-delete-btn" onclick="confirmDeleteGrid('${grid.id}', '${grid.name}')">Supprimer</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Charger et démarrer une grille sauvegardée
+function loadAndPlayGrid(gridId) {
+    const gridData = loadGridFromStorage(gridId);
+    if (!gridData) {
+        showMessage('Erreur lors du chargement de la grille.', 'error');
+        return;
+    }
+
+    // Basculer vers le mode création avec la grille chargée
+    // Copier la grille sauvegardée
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            sudokuGrid[row][col] = gridData.grid[row][col];
+            solutionGrid[row][col] = gridData.solution[row][col];
+        }
+    }
+
+    // Calculer initialGrid (toutes les cellules sont modifiables en mode création)
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            initialGrid[row][col] = 0; // Tout est modifiable en création
+        }
+    }
+
+    // Activer le mode création
+    isCustomMode = true;
+
+    // Masquer l'écran des grilles et afficher le jeu
+    document.getElementById('saved-grids-screen').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+
+    // Créer la grille et l'afficher
+    createBoard();
+    createNumberPad();
+
+    // Réinitialiser l'historique du mode création
+    history = [];
+    historyIndex = -1;
+
+    // Ajouter l'état initial à l'historique
+    const initialState = {
+        grid: JSON.parse(JSON.stringify(sudokuGrid)),
+        maskedCandidates: JSON.parse(JSON.stringify(maskedCandidates)),
+        highlightedCandidates: JSON.parse(JSON.stringify(highlightedCandidates)),
+        redMarkedCandidates: JSON.parse(JSON.stringify(redMarkedCandidates))
+    };
+    history.push(initialState);
+    historyIndex = 0;
+
+    // Mettre à jour l'affichage
+    updateBoard();
+
+    // Afficher le bouton "Démarrer le Jeu"
+    document.getElementById('start-custom-game').classList.remove('hidden');
+
+    showMessage(`Grille "${gridData.name}" chargée. Modifiez-la puis cliquez sur "Démarrer le Jeu".`, 'info');
+}
+
+// Confirmer la suppression d'une grille
+function confirmDeleteGrid(gridId, gridName) {
+    if (confirm(`Voulez-vous vraiment supprimer la grille "${gridName}" ?`)) {
+        const success = deleteSavedGrid(gridId);
+        if (success) {
+            renderSavedGrids(); // Recharger la liste
+            showMessage('Grille supprimée avec succès.', 'success');
+        } else {
+            showMessage('Erreur lors de la suppression.', 'error');
+        }
+    }
+}
+
+// Formater une date pour l'affichage
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = now - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+        // Aujourd'hui
+        return `Aujourd'hui ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    } else if (diffDays === 1) {
+        // Hier
+        return `Hier ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    } else if (diffDays < 7) {
+        // Cette semaine
+        return `Il y a ${diffDays} jours`;
+    } else {
+        // Plus vieux
+        return date.toLocaleDateString('fr-FR');
+    }
+}
+
+// Mettre à jour la visibilité des boutons de contrôle selon le mode actif
+function updateControlButtonsVisibility() {
+    const saveBtn = document.getElementById('save-grid-btn');
+
+    // Le bouton de sauvegarde n'est visible que dans le mode création personnalisée
+    if (isCustomMode && document.getElementById('game-container').classList.contains('hidden') === false) {
+        saveBtn.classList.remove('hidden');
+    } else {
+        saveBtn.classList.add('hidden');
+    }
 }
 
 // Ajouter le style CSS pour l'indice
