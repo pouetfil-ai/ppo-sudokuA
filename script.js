@@ -367,30 +367,52 @@ function generatePuzzle(difficulty) {
     }
 }
 
-// Remplir la grille avec un Sudoku valide
+// Remplir la grille avec un Sudoku valide en utilisant backtracking classique
 function fillGrid() {
-    // Utiliser un algorithme de génération simple avec limite d'essais
-    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    const maxTries = 5; // Limiter les tentatives par cellule pour éviter boucle infinie
-    for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-            if (sudokuGrid[row][col] === 0) {
-                shuffleArray(nums);
-                let placed = false;
-                for (let num of nums) {
-                    if (isValidMove(row, col, num)) {
-                        sudokuGrid[row][col] = num;
-                        if (fillGrid()) {
-                            return true;
-                        }
-                        sudokuGrid[row][col] = 0;
-                    }
+    // Fonction helper pour trouver la prochaine cellule vide
+    function findEmptyCell() {
+        for (let row = 0; row < 9; row++) {
+            for (let col = 0; col < 9; col++) {
+                if (sudokuGrid[row][col] === 0) {
+                    return { row, col };
                 }
-                return false; // Échec si aucun numero ne convenait
             }
         }
+        return null; // Grille complète
     }
-    return true;
+
+    // Algorithme de backtracking récursif
+    function fill() {
+        const emptyCell = findEmptyCell();
+
+        // Si aucune cellule vide, grille complète
+        if (!emptyCell) {
+            return true;
+        }
+
+        const { row, col } = emptyCell;
+        const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        shuffleArray(nums); // Mélanger pour variété
+
+        // Essayer chaque chiffre dans un ordre aléatoire
+        for (let num of nums) {
+            if (isValidMove(row, col, num)) {
+                sudokuGrid[row][col] = num;
+
+                // Récursivement remplir les cellules suivantes
+                if (fill()) {
+                    return true; // Succès
+                }
+
+                // Échec, backtrack
+                sudokuGrid[row][col] = 0;
+            }
+        }
+
+        return false; // Aucun chiffre ne convient
+    }
+
+    return fill();
 }
 
 // Résoudre le Sudoku et compter les solutions (pour vérifier l'unicité)
