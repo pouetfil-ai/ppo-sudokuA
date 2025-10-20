@@ -122,6 +122,8 @@ function setupEventListeners() {
     addTouchAndClick('save-grid-btn', showSaveDialog);
     addTouchAndClick('my-grids-btn', showSavedGrids);
     addTouchAndClick('back-to-menu-btn', showMenu);
+    addTouchAndClick('help-btn', showHelp);
+    addTouchAndClick('help-modal-close', hideHelp);
     addTouchAndClick('mask-hint', () => {
         maskMode = !maskMode;
         if (maskMode) highlightMode = false;
@@ -2431,4 +2433,225 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(style);
+});
+
+// ===== SYSTEME D'AIDE =====
+
+// Afficher la modal d'aide contextuelle
+function showHelp() {
+    const modal = document.getElementById('help-modal');
+    const modalTitle = document.getElementById('help-modal-title');
+    const modalContent = document.getElementById('help-modal-content');
+
+    // Vérifier si on est dans le menu ou en jeu
+    const isMenuActive = !document.getElementById('menu').classList.contains('hidden');
+    const isGameActive = !document.getElementById('game-container').classList.contains('hidden');
+
+    if (isMenuActive) {
+        modalTitle.textContent = 'Guide du Menu Principal';
+        modalContent.innerHTML = getMenuHelpContent();
+    } else if (isGameActive) {
+        modalTitle.textContent = 'Guide du Jeu';
+        modalContent.innerHTML = getGameHelpContent();
+    } else {
+        // Écran des grilles sauvegardées
+        modalTitle.textContent = 'Guide des Grilles Sauvegardées';
+        modalContent.innerHTML = getSavedGridsHelpContent();
+    }
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// Masquer la modal d'aide
+function hideHelp() {
+    const modal = document.getElementById('help-modal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+// Obtenir le contenu d'aide pour le menu
+function getMenuHelpContent() {
+    return `
+        <div class="help-section">
+            <h4>🎯 Réglages du Jeu</h4>
+            <div class="help-item">
+                <div class="help-item-icon">📊</div>
+                <div class="help-item-text"><strong>Difficulté</strong> : Choisissez entre Facile, Moyen, ou Difficile pour votre partie.</div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h4>🎮 Démarrer une Partie</h4>
+            <div class="help-item">
+                <div class="help-item-icon">▶️</div>
+                <div class="help-item-text"><strong>Commencer la Partie</strong> : Lance une grille générée aléatoirement selon vos réglages.</div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h4>📚 Gestion des Grilles</h4>
+            <div class="help-item">
+                <div class="help-item-icon">📁</div>
+                <div class="help-item-text"><strong>Mes Grilles</strong> : Accédez à vos grilles sauvegardées pour les rejouer ou modifier.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">✏️</div>
+                <div class="help-item-text"><strong>Créer Grille Personnalisée</strong> : Dessinez votre propre Sudoku pour créer des puzzles uniques.</div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h4>💡 Conseils</h4>
+            <div class="help-item">
+                <div class="help-item-icon">🎯</div>
+                <div class="help-item-text">Chaque Sudoku respecte les règles : chaque chiffre de 1 à 9 apparaît une seule fois par ligne, colonne et bloc 3×3.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">🏆</div>
+                <div class="help-item-text">Les grilles difficiles utilisent des techniques avancées comme les candidates et les indices intelligents.</div>
+            </div>
+        </div>
+    `;
+}
+
+// Obtenir le contenu d'aide pour le jeu
+function getGameHelpContent() {
+    return `
+        <div class="help-section">
+            <h4>🎮 Contrôles Principaux</h4>
+            <div class="help-item">
+                <div class="help-item-icon">🔙</div>
+                <div class="help-item-text"><strong>Menu</strong> : Retour au menu principal sans sauvegarder.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">↶</div>
+                <div class="help-item-text"><strong>Annuler</strong> : Revenir à l'action précédente.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">↷</div>
+                <div class="help-item-text"><strong>Rétablir</strong> : Annuler la dernière action d'annulation.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">🗑️</div>
+                <div class="help-item-text"><strong>Effacer Grille</strong> : Vider toutes les cellules modifiables.</div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h4>🔢 Gestion des Candidats</h4>
+            <div class="help-item">
+                <div class="help-item-icon">🔢</div>
+                <div class="help-item-text"><strong>Candidats</strong> : Afficher/masquer les chiffres possibles dans les cellules vides.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">✎</div>
+                <div class="help-item-text"><strong>Masquer</strong> : Cacher un candidat possible (mode crayon).</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">✏️</div>
+                <div class="help-item-text"><strong>Marquer</strong> : Surligner des candidats en jaune ou rouge pour vos annotations.</div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h4>🎯 Comment Jouer</h4>
+            <div class="help-item">
+                <div class="help-item-icon">👆</div>
+                <div class="help-item-text"><strong>Clic</strong> : Sélectionner une cellule pour la modifier.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">⌨️</div>
+                <div class="help-item-text"><strong>Clavier</strong> : Utilisez les chiffres 1-9 pour remplir les cellules.</div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h4>🧠 Aide Intelligente</h4>
+            <div class="help-item">
+                <div class="help-item-icon">💡</div>
+                <div class="help-item-text"><strong>Indices</strong> : Obtenez des conseils techniques avancés (candidates, paires, etc.).</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">🎨</div>
+                <div class="help-item-text"><strong>Mise en évidence</strong> : Les cellules liées se colorent automatiquement lors de la sélection.</div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h4>💾 Sauvegarde</h4>
+            <div class="help-item">
+                <div class="help-item-icon">💾</div>
+                <div class="help-item-text"><strong>Sauvegarder</strong> : Conservez vos grilles personnalisées (uniquement en mode création).</div>
+            </div>
+        </div>
+    `;
+}
+
+// Obtenir le contenu d'aide pour les grilles sauvegardées
+function getSavedGridsHelpContent() {
+    return `
+        <div class="help-section">
+            <h4>📁 Gestion des Grilles</h4>
+            <div class="help-item">
+                <div class="help-item-icon">📋</div>
+                <div class="help-item-text"><strong>Liste des grilles</strong> : Toutes vos grilles sauvegardées sont affichées ici, triées par date récente.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">▶️</div>
+                <div class="help-item-text"><strong>Charger</strong> : Ouvrir une grille sauvegardée pour la modifier ou la jouer.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">🗑️</div>
+                <div class="help-item-text"><strong>Supprimer</strong> : Retirer définitivement une grille de votre collection.</div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h4>📊 Informations des Grilles</h4>
+            <div class="help-item">
+                <div class="help-item-icon">🔢</div>
+                <div class="help-item-text"><strong>Cellules remplies</strong> : Nombre de cellules remplies sur les 81 totales.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">📈</div>
+                <div class="help-item-text"><strong>Difficulté</strong> : Estimation automatique basée sur le nombre de cellules initiales.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">📅</div>
+                <div class="help-item-text"><strong>Date</strong> : Quand la grille a été créée ou sauvegardée.</div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h4>♻️ Utilisation</h4>
+            <div class="help-item">
+                <div class="help-item-icon">🔄</div>
+                <div class="help-item-text">Les grilles chargées s'ouvrent en mode création. Cliquez sur "Démarrer le Jeu" pour jouer.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-item-icon">💾</div>
+                <div class="help-item-text">Limite de 10 grilles sauvegardées. Les plus anciennes sont automatiquement supprimées.</div>
+            </div>
+        </div>
+    `;
+}
+
+// Fermer la modal en cliquant sur l'overlay
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('help-modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                hideHelp();
+            }
+        });
+    }
+
+    // Fermer avec Échap
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !document.getElementById('help-modal').classList.contains('hidden')) {
+            hideHelp();
+        }
+    });
 });
