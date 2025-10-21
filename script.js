@@ -1206,7 +1206,17 @@ function findEasyHint() {
         };
     }
 
-    // 8. Recherche d'un Jellyfish (technique ultime - Fish 4x4)
+    // 8. Recherche d'un Gratte-ciel (Skyscraper - technique Fish avancée)
+    const skyscraper = findSkyscraper(candidates);
+    if (skyscraper) {
+        const cells = skyscraper.cells.map(([r, c]) => document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`));
+        return {
+            message: `Gratte-ciel détecté ! Pour le chiffre <strong>${skyscraper.digit}</strong>, les cellules <strong>${skyscraper.cells.map(([r, c]) => getCellNotation(r, c)).join(', ')}</strong> forment un motif en "L". Ce chiffre peut être éliminé de la cellule <strong>${getCellNotation(skyscraper.eliminationCell[0], skyscraper.eliminationCell[1])}</strong>.`,
+            cellsToHighlight: cells
+        };
+    }
+
+    // 9. Recherche d'un Jellyfish (technique ultime - Fish 4x4)
     const jellyfish = findJellyfish(candidates);
     if (jellyfish) {
         const cells = jellyfish.cells.map(([r, c]) => document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`));
@@ -1967,6 +1977,196 @@ function findSwordfishEliminations(candidates, digit, rows, cols) {
     }
 
     return eliminationCells;
+}
+
+// Trouver un Gratte-ciel (Skyscraper - technique Fish avancée)
+function findSkyscraper(candidates) {
+    // Un Gratte-ciel se produit quand deux unités (lignes ou colonnes) ont un candidat
+    // qui apparaît exactement 2 fois chacune, formant un pattern en "L", et une cellule
+    // adjacente peut être éliminée car elle complète virtuellement un rectangle partiel.
+
+    for (let digit = 1; digit <= 9; digit++) {
+        // Tester les Gratte-ciel basés sur lignes
+        const lineBasedSkyscraper = findLineBasedSkyscraper(candidates, digit);
+        if (lineBasedSkyscraper) {
+            return lineBasedSkyscraper;
+        }
+
+        // Tester les Gratte-ciel basés sur colonnes
+        const columnBasedSkyscraper = findColumnBasedSkyscraper(candidates, digit);
+        if (columnBasedSkyscraper) {
+            return columnBasedSkyscraper;
+        }
+    }
+
+    return null;
+}
+
+// Trouver un Gratte-ciel basé sur les lignes
+function findLineBasedSkyscraper(candidates, digit) {
+    // Chercher toutes les lignes où le candidat apparaît exactement 2 fois
+    const lineCandidates = [];
+    for (let row = 0; row < 9; row++) {
+        let count = 0;
+        const positions = [];
+        for (let col = 0; col < 9; col++) {
+            if (sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                count++;
+                positions.push(col);
+            }
+        }
+        if (count === 2) {
+            lineCandidates.push({ row: row, cols: positions });
+        }
+    }
+
+    // Tester toutes les paires de lignes pour former un pattern en "L"
+    for (let i = 0; i < lineCandidates.length; i++) {
+        for (let j = i + 1; j < lineCandidates.length; j++) {
+            const rowA = lineCandidates[i].row;
+            const rowB = lineCandidates[j].row;
+            const [colA1, colA2] = lineCandidates[i].cols.sort();
+            const [colB1, colB2] = lineCandidates[j].cols.sort();
+
+            // Conditions pour un Skyscraper :
+            // - Une colonne commune et une colonne différente par ligne
+            // - Le pattern forme un "L"
+            let pivotCol, endColA, endColB;
+
+            if (colA1 === colB1) {
+                // Colonne commune à gauche
+                pivotCol = colA1;
+                endColA = colA2;
+                endColB = colB2;
+            } else if (colA1 === colB2) {
+                pivotCol = colA1;
+                endColA = colA2;
+                endColB = colB1;
+            } else if (colA2 === colB1) {
+                pivotCol = colA2;
+                endColA = colA1;
+                endColB = colB2;
+            } else if (colA2 === colB2) {
+                pivotCol = colA2;
+                endColA = colA1;
+                endColB = colB1;
+            } else {
+                // Pas de colonne commune, pas un Skyscraper
+                continue;
+            }
+
+            // Chercher une cellule d'élimination dans la même ligne qui voit les deux extrémités
+            // L'élimination peut se produire dans rowA ou rowB
+            for (let elimRow of [rowA, rowB]) {
+                for (let col = 0; col < 9; col++) {
+                    if (sudokuGrid[elimRow][col] === 0 && candidates[elimRow][col].includes(digit)) {
+                        // Cette cellule ne doit pas faire partie du Skyscraper
+                        if (col === pivotCol || col === endColA || col === endColB) continue;
+
+                        // Vérifier si elle voit les deux extrémités de l'L
+                        const seesEndA = cellsSeeEachOther(elimRow, col, rowA === elimRow ? rowA : rowB, endColA);
+                        const seesEndB = cellsSeeEachOther(elimRow, col, rowA === elimRow ? rowB : rowA, endColB);
+
+                        if (seesEndA && seesEndB) {
+                            // Skyscraper trouvé !
+                            return {
+                                digit: digit,
+                                cells: [
+                                    [rowA, colA1], [rowA, colA2],
+                                    [rowB, colB1], [rowB, colB2]
+                                ],
+                                eliminationCell: [elimRow, col]
+                            };
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+function findColumnBasedSkyscraper(candidates, digit) {
+    // Même logique pour les colonnes
+    const colCandidates = [];
+    for (let col = 0; col < 9; col++) {
+        let count = 0;
+        const positions = [];
+        for (let row = 0; row < 9; row++) {
+            if (sudokuGrid[row][col] === 0 && candidates[row][col].includes(digit)) {
+                count++;
+                positions.push(row);
+            }
+        }
+        if (count === 2) {
+            colCandidates.push({ col: col, rows: positions });
+        }
+    }
+
+    // Tester toutes les paires de colonnes pour former un pattern en "L"
+    for (let i = 0; i < colCandidates.length; i++) {
+        for (let j = i + 1; j < colCandidates.length; j++) {
+            const colA = colCandidates[i].col;
+            const colB = colCandidates[j].col;
+            const [rowA1, rowA2] = colCandidates[i].rows.sort();
+            const [rowB1, rowB2] = colCandidates[j].rows.sort();
+
+            // Conditions pour un Skyscraper :
+            // - Une ligne commune et une ligne différente par colonne
+            let pivotRow, endRowA, endRowB;
+
+            if (rowA1 === rowB1) {
+                // Ligne commune en haut
+                pivotRow = rowA1;
+                endRowA = rowA2;
+                endRowB = rowB2;
+            } else if (rowA1 === rowB2) {
+                pivotRow = rowA1;
+                endRowA = rowA2;
+                endRowB = rowB1;
+            } else if (rowA2 === rowB1) {
+                pivotRow = rowA2;
+                endRowA = rowA1;
+                endRowB = rowB2;
+            } else if (rowA2 === rowB2) {
+                pivotRow = rowA2;
+                endRowA = rowA1;
+                endRowB = rowB1;
+            } else {
+                // Pas de ligne commune, pas un Skyscraper
+                continue;
+            }
+
+            // Chercher une cellule d'élimination dans la même colonne qui voit les deux extrémités
+            for (let elimCol of [colA, colB]) {
+                for (let row = 0; row < 9; row++) {
+                    if (sudokuGrid[row][elimCol] === 0 && candidates[row][elimCol].includes(digit)) {
+                        // Cette cellule ne doit pas faire partie du Skyscraper
+                        if (row === pivotRow || row === endRowA || row === endRowB) continue;
+
+                        // Vérifier si elle voit les deux extrémités de l'L
+                        const seesEndA = cellsSeeEachOther(row, elimCol, endRowA, colA === elimCol ? colA : colB);
+                        const seesEndB = cellsSeeEachOther(row, elimCol, endRowB, colA === elimCol ? colB : colA);
+
+                        if (seesEndA && seesEndB) {
+                            // Skyscraper trouvé !
+                            return {
+                                digit: digit,
+                                cells: [
+                                    [rowA1, colA], [rowA2, colA],
+                                    [rowB1, colB], [rowB2, colB]
+                                ],
+                                eliminationCell: [row, elimCol]
+                            };
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
 }
 
 // Trouver un Jellyfish (technique ultime - Fish 4x4)
