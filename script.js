@@ -667,8 +667,34 @@ function handleKeyPress(event) {
     const key = event.key;
 
     if (isCustomMode) {
-        // Mode création personnalisée : insertion libre sans vérification de validité
-        if (key >= '1' && key <= '9') {
+        // Mode création personnalisée : insertion libre sans vérification de validité + modes crayon
+        if (highlightMode && key >= '1' && key <= '9') {
+            // (Dé)marquer un candidat en jaune
+            const num = parseInt(key);
+            highlightedCandidates[row][col][num] = !highlightedCandidates[row][col][num];
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+            clearMessage();
+        } else if (redMode && key >= '1' && key <= '9') {
+            // (Dé)marquer un candidat en rouge
+            const num = parseInt(key);
+            redMarkedCandidates[row][col][num] = !redMarkedCandidates[row][col][num];
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates, redMarkedCandidates);
+            clearMessage();
+        } else if (maskMode && key >= '1' && key <= '9') {
+            // Masquer un candidat
+            const num = parseInt(key);
+            if (!maskedCandidates[row][col][num]) {
+                maskedCandidates[row][col][num] = true;
+                updateBoard();
+                updateCandidateBtnStates();
+                addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+                clearMessage();
+            }
+        } else if (key >= '1' && key <= '9') {
             sudokuGrid[row][col] = parseInt(key);
             updateBoard();
             addToHistory(sudokuGrid);
@@ -952,11 +978,35 @@ function onNumberPadClick(num) {
     if (initialGrid[row][col] !== 0) return; // Cellule fixe
 
     if (isCustomMode) {
-        // Mode création personnalisée : insertion libre
-        sudokuGrid[row][col] = num;
-        updateBoard();
-        addToHistory(sudokuGrid);
-        clearMessage();
+        // Mode création personnalisée : insertion libre + modes crayon
+        if (highlightMode && isValidMove(row, col, num)) {
+            // (Dé)marquer un candidat en jaune avec les boutons du pad
+            highlightedCandidates[row][col][num] = !highlightedCandidates[row][col][num];
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates);
+            clearMessage();
+        } else if (redMode && isValidMove(row, col, num)) {
+            // (Dé)marquer un candidat en rouge avec les boutons du pad
+            redMarkedCandidates[row][col][num] = !redMarkedCandidates[row][col][num];
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates, highlightedCandidates, redMarkedCandidates);
+            clearMessage();
+        } else if (maskMode && isValidMove(row, col, num) && !maskedCandidates[row][col][num]) {
+            // Masquer un candidat en mode crayon avec les boutons du pad
+            maskedCandidates[row][col][num] = true;
+            updateBoard();
+            updateCandidateBtnStates();
+            addToHistory(sudokuGrid, maskedCandidates);
+            clearMessage();
+        } else if (!maskMode && !highlightMode && !redMode) {
+            // Mode insertion normale : insertion libre
+            sudokuGrid[row][col] = num;
+            updateBoard();
+            addToHistory(sudokuGrid);
+            clearMessage();
+        }
     } else {
         // Mode jeu normal : vérifications de validité
         if (highlightMode && isValidMove(row, col, num)) {
